@@ -306,7 +306,8 @@ move_objeto:
   PUSH R1
   PUSH R3
   PUSH R4
-
+  MOV R8 ,0 ; som número 0
+  MOV [TOCA_SOM], R8 ; comando para tocar o som
   MOV R3, ASTEROID_0 ; R3 <- endereço do asteroide inicial
 
   MOV R0, [R3] ; R0 <- posição do asteroide inicial
