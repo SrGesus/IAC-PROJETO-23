@@ -117,7 +117,7 @@ inicio:
   MOV  R4, DISPLAYS  ; endereço do periférico dos displays
   MOV  R5, MASCARA   ; para isolar os 4 bits de menor peso, ao ler as colunas do teclado
   MOV  R6, 0000H     ; reseta o valor do display para 0
-  MOV [R4], R0  ; Escreve 0 no display
+  MOV [R4], R6  ; Escreve 0 no display
 
 desenha_painel: ;desenha o painel de instrumentos da nave
   PUSH R0 ;guarda o valor de R0
@@ -150,8 +150,7 @@ move_sonda:
 ; Lê o teclado em ciclo e executa as rotinas para cada tecla
 ; *****************************************************************************
 ler_teclado:
-  MOV R1, LINHA ; Linha toma valor inicial 1111H
-  MOV R0, 0
+  MOV R1, LINHA ; Linha toma valor inicial 1111H para ser rotated
 
 espera_tecla:
   ROL R1, 1     ; Roda o valor da linha representado pelo least significant nibble
@@ -160,7 +159,7 @@ espera_tecla:
   AND R0, R5    ; descarta todos bits exceto 0-3
   CMP R0, 0
   JZ espera_tecla ; se nenhuma tecla for premida continuar ciclo
-  
+
   CALL valor_teclado
   CALL executa_comando
 
@@ -170,7 +169,7 @@ ha_tecla: ; Ciclo enquanto a tecla estiver a ser premida
   AND R0, R5
   CMP R0, 0
   JNZ ha_tecla
-  JMP ler_teclado
+  JMP espera_tecla
 
 ; *****************************************************************************
 ; * VALOR_TECLADO - Rotina para converter linha e coluna para valor 
