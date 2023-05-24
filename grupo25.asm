@@ -52,7 +52,7 @@ SP_inicial:
     ; *************************************************************************
 LISTA_ROTINAS:
   WORD faz_nada           ; Tecla 0
-  WORD faz_nada           ; Tecla 1
+  WORD move_sonda         ; Tecla 1
   WORD faz_nada           ; Tecla 2
   WORD incrementa_display ; Tecla 3
   WORD faz_nada           ; Tecla 4
@@ -87,17 +87,23 @@ ASTEROID_0:
   WORD 0000H ; Posição : Primeiro byte é linha, segundo coluna
   WORD 0101H ; Direção do movimento
   WORD ASTEROIDE_BONECO ; Boneco
+  ;BYTE  01H, 02H ; Posição : Primeiro byte é linha, segundo coluna
+  ;BYTE  01H, 00H ; Direção do movimento (-1 Esquerda, 0 Baixo, 1 Direita)
+  ; Segundo byte é padding
+  ;WORD  ASTEROIDE_BONECO ; Boneco
 
 PAINEL_NAVE:
   WORD 15   ; Largura painel
   WORD 5    ; Altura painel
-  WORD          0, 0, 0FF00H, 0FF00H, 0FF00H , 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0, 0
-  WORD    0, 0FF00H, 0FF00H, 0FF00H, 0FF00H , 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0
-  WORD 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H , 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H
-  WORD 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H , 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H
-  WORD 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H , 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H
+  WORD  0C57EH,  0C57EH, 0C57EH, 0C57EH, 0C57EH, 0C57EH, 0C57EH, 0C57EH, 0C57EH, 0A57FH, 0A57FH, 0A57FH, 0A57FH, 0A57FH, 0A57FH
+  WORD  0C57EH,  0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0A57FH
+  WORD  0C57EH,  0FF00H, 0FF00H, 0FF00H, 0A999H, 0FF00H, 0A999H, 0A999H, 0A999H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0A57FH
+  WORD  0C57EH,  0FF00H, 0FF00H, 0FF00H, 0A999H, 0FF00H, 0FF00H, 0A46DH, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0A57FH
+  WORD  0C57EH,  0A9DEH, 0A9DEH, 0A9DEH, 0A46DH, 0A9DEH, 0A46DH, 0A46DH, 0A46DH, 0A9DEH, 0A9DEH, 0A9DEH, 0A9DEH, 0A9DEH, 0A57FH
 
-
+SONDA:
+  WORD 26
+  WORD 32
 ; *****************************************************************************
 ; * Inicializações dos Registos e Stack Pointer
 ; *****************************************************************************
@@ -118,6 +124,7 @@ inicio:
   MOV  R5, MASCARA   ; para isolar os 4 bits de menor peso, ao ler as colunas do teclado
   MOV  R6, 0000H     ; reseta o valor do display para 0
   MOV [R4], R0  ; Escreve 0 no display
+  MOV R9, LINHA_SONDA
 
 desenha_painel: ;desenha o painel de instrumentos da nave
   PUSH R0 ;guarda o valor de R0
@@ -131,20 +138,6 @@ desenha_painel: ;desenha o painel de instrumentos da nave
   POP R1  ; R1 volta a tomar valor anterior
   POP R0  ; R0 volta a tomar valor anterior
 
-move_sonda:
-  PUSH R0
-  PUSH R1
-  PUSH R2
-  MOV R2, 0
-  MOV R0, LINHA_SONDA
-  MOV R1, COLUNA_SONDA
-  CALL escreve_pixel
-  SUB R0, 1
-  MOV R2, 0FF00H
-  CALL escreve_pixel
-  POP R2
-  POP R1
-  POP R0
 
 ; *****************************************************************************
 ; Lê o teclado em ciclo e executa as rotinas para cada tecla
@@ -294,7 +287,28 @@ converte_decimal:
   POP R6
   RET
 
-
+; *****************************************************************************
+; * MOVE_SONDA - Move, apaga, e desenha a sonda 
+; * Argumentos:
+; *****************************************************************************
+move_sonda:
+  PUSH R0
+  PUSH R1
+  PUSH R2
+  PUSH R4
+  MOV R2, 0
+  MOV R1, COLUNA_SONDA
+  MOV R0, R9
+  CALL escreve_pixel
+  SUB R9, 1
+  MOV R0, R9
+  MOV R2, 0FF00H
+  CALL escreve_pixel
+  POP R4
+  POP R2
+  POP R1
+  POP R0
+  RET
 ; *****************************************************************************
 ; * MOVE_OBJETO - Move, apaga, e desenha um objeto representado 
 ; *   por uma determinada tabela.
@@ -447,8 +461,3 @@ escreve_pixel:
 	MOV  [DEFINE_COLUNA], R1		; seleciona a coluna
 	MOV  [DEFINE_PIXEL], R2		; altera a cor do pixel na linha e coluna já selecionadas
 	RET
-
-
-
-
-
