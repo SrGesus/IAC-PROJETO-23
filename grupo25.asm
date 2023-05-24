@@ -17,6 +17,8 @@
   LINHA_PAINEL    EQU 27  ; linha onde se encontra o painel
   COLUNA_PAINEL   EQU 25  ; coluna onde se encontra o painel
 
+  LINHA_SONDA     EQU 26
+  COLUNA_SONDA    EQU 32
   COMANDOS				EQU	6000H			; endereço de base dos comandos do MediaCenter
 
   DEFINE_LINHA    		EQU COMANDOS + 0AH		; endereço do comando para definir a linha
@@ -54,7 +56,7 @@ LISTA_ROTINAS:
   WORD faz_nada           ; Tecla 2
   WORD incrementa_display ; Tecla 3
   WORD faz_nada           ; Tecla 4
-  WORD move_objeto     ; Tecla 5
+  WORD move_objeto        ; Tecla 5
   WORD faz_nada           ; Tecla 6
   WORD decrementa_display ; Tecla 7
   WORD faz_nada           ; Tecla 8
@@ -95,6 +97,7 @@ PAINEL_NAVE:
   WORD 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H , 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H
   WORD 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H , 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H
 
+
 ; *****************************************************************************
 ; * Inicializações dos Registos e Stack Pointer
 ; *****************************************************************************
@@ -127,6 +130,21 @@ desenha_painel: ;desenha o painel de instrumentos da nave
   POP R4  ; R4 volta a tomar valor anterior
   POP R1  ; R1 volta a tomar valor anterior
   POP R0  ; R0 volta a tomar valor anterior
+
+move_sonda:
+  PUSH R0
+  PUSH R1
+  PUSH R2
+  MOV R2, 0
+  MOV R0, LINHA_SONDA
+  MOV R1, COLUNA_SONDA
+  CALL escreve_pixel
+  SUB R0, 1
+  MOV R2, 0FF00H
+  CALL escreve_pixel
+  POP R2
+  POP R1
+  POP R0
 
 ; *****************************************************************************
 ; Lê o teclado em ciclo e executa as rotinas para cada tecla
@@ -289,17 +307,18 @@ move_objeto:
   PUSH R3
   PUSH R4
 
-  MOV R3, ASTEROID_0
+  MOV R3, ASTEROID_0 ; R3 <- endereço do asteroide inicial
 
-  MOV R0, [R3]
-  MOV R1, [R3]
-  SHR R0, 8
-  SHL R1, 8
-  SHR R1, 8
+  MOV R0, [R3] ; R0 <- posição do asteroide inicial
+  MOV R1, [R3] ; R1 <- posição do asteroide inicial
+  SHR R0, 8 ; isola a linha
+  SHL R1, 8 ; isola a coluna
+  SHR R1, 8 ; mete a coluna no byte à direita
   
-  ADD R3, 4
+  ADD R3, 4 ; R3 <- endereço das características do asteroide
+  ; o primeiro sendo a largura 
 
-  MOV R4, [R3]
+  MOV R4, [R3] ; R4 <- largura do asteroide
 
   CALL apaga_boneco
  
