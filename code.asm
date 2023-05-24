@@ -87,20 +87,19 @@ ASTEROID_0:
   WORD 0000H ; Posição : Primeiro byte é linha, segundo coluna
   WORD 0101H ; Direção do movimento
   WORD ASTEROIDE_BONECO ; Boneco
-  ;BYTE  01H, 02H ; Posição : Primeiro byte é linha, segundo coluna
-  ;BYTE  01H, 00H ; Direção do movimento (-1 Esquerda, 0 Baixo, 1 Direita)
-  ; Segundo byte é padding
-  ;WORD  ASTEROIDE_BONECO ; Boneco
 
 PAINEL_NAVE:
   WORD 15   ; Largura painel
   WORD 5    ; Altura painel
-  WORD  0C57EH,  0C57EH, 0C57EH, 0C57EH, 0C57EH, 0C57EH, 0C57EH, 0C57EH, 0C57EH, 0A57FH, 0A57FH, 0A57FH, 0A57FH, 0A57FH, 0A57FH
-  WORD  0C57EH,  0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0A57FH
-  WORD  0C57EH,  0FF00H, 0FF00H, 0FF00H, 0A999H, 0FF00H, 0A999H, 0A999H, 0A999H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0A57FH
-  WORD  0C57EH,  0FF00H, 0FF00H, 0FF00H, 0A999H, 0FF00H, 0FF00H, 0A46DH, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0A57FH
-  WORD  0C57EH,  0A9DEH, 0A9DEH, 0A9DEH, 0A46DH, 0A9DEH, 0A46DH, 0A46DH, 0A46DH, 0A9DEH, 0A9DEH, 0A9DEH, 0A9DEH, 0A9DEH, 0A57FH
+  WORD          0, 0, 0FF00H, 0FF00H, 0FF00H , 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0, 0
+  WORD    0, 0FF00H, 0FF00H, 0FF00H, 0FF00H , 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0
+  WORD 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H , 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H
+  WORD 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H , 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H
+  WORD 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H , 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H
 
+SONDA:
+  WORD 26
+  WORD 32
 ; *****************************************************************************
 ; * Inicializações dos Registos e Stack Pointer
 ; *****************************************************************************
@@ -284,10 +283,7 @@ converte_decimal:
   POP R6
   RET
 
-; *****************************************************************************
-; * MOVE_SONDA - Move, apaga, e desenha a sonda 
-; * Argumentos:
-; *****************************************************************************
+
 move_sonda:
   PUSH R0
   PUSH R1
