@@ -19,6 +19,7 @@
 
   LINHA_SONDA     EQU 26
   COLUNA_SONDA    EQU 32
+
   COMANDOS				EQU	6000H			; endereço de base dos comandos do MediaCenter
 
   DEFINE_LINHA    		EQU COMANDOS + 0AH		; endereço do comando para definir a linha
@@ -56,7 +57,7 @@ LISTA_ROTINAS:
   WORD faz_nada           ; Tecla 2
   WORD incrementa_display ; Tecla 3
   WORD faz_nada           ; Tecla 4
-  WORD move_objeto        ; Tecla 5
+  WORD move_asteroide     ; Tecla 5
   WORD faz_nada           ; Tecla 6
   WORD decrementa_display ; Tecla 7
   WORD faz_nada           ; Tecla 8
@@ -84,22 +85,34 @@ ASTEROIDE_BONECO:
   WORD 0FF00H, 0, 0FF00H, 0, 0FF00H
 
 ASTEROID_0:
-  WORD 0000H ; Posição : Primeiro byte é linha, segundo coluna
-  WORD 0101H ; Direção do movimento
+  WORD 00H, 00H         ; Posição: Primeira word é linha, segundo coluna
+  WORD 01H, 01H         ; Direção do movimento
   WORD ASTEROIDE_BONECO ; Boneco
-  ;BYTE  01H, 02H ; Posição : Primeiro byte é linha, segundo coluna
-  ;BYTE  01H, 00H ; Direção do movimento (-1 Esquerda, 0 Baixo, 1 Direita)
-  ; Segundo byte é padding
-  ;WORD  ASTEROIDE_BONECO ; Boneco
+
+SONDA_BONECO:
+  WORD 1
+  WORD 1
+
+  WORD 0FF00H
+
+SONDA_OBJETO:
+  WORD LINHA_SONDA, COLUNA_SONDA  ; Posição: Primeiro word é linha, segundo coluna
+  WORD 0FFFFH, 01H                ; Direção do movimento
+  WORD SONDA_BONECO               ; Boneco
 
 PAINEL_NAVE:
   WORD 15   ; Largura painel
   WORD 5    ; Altura painel
-  WORD  0C57EH,  0C57EH, 0C57EH, 0C57EH, 0C57EH, 0C57EH, 0C57EH, 0C57EH, 0C57EH, 0A57FH, 0A57FH, 0A57FH, 0A57FH, 0A57FH, 0A57FH
-  WORD  0C57EH,  0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0A57FH
-  WORD  0C57EH,  0FF00H, 0FF00H, 0FF00H, 0A999H, 0FF00H, 0A999H, 0A999H, 0A999H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0A57FH
-  WORD  0C57EH,  0FF00H, 0FF00H, 0FF00H, 0A999H, 0FF00H, 0FF00H, 0A46DH, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0A57FH
-  WORD  0C57EH,  0A9DEH, 0A9DEH, 0A9DEH, 0A46DH, 0A9DEH, 0A46DH, 0A46DH, 0A46DH, 0A9DEH, 0A9DEH, 0A9DEH, 0A9DEH, 0A9DEH, 0A57FH
+  ;WORD  0C57EH,  0C57EH, 0C57EH, 0C57EH, 0C57EH, 0C57EH, 0C57EH, 0C57EH, 0C57EH, 0A57FH, 0A57FH, 0A57FH, 0A57FH, 0A57FH, 0A57FH
+  ;WORD  0C57EH,  0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0A57FH
+  ;WORD  0C57EH,  0FF00H, 0FF00H, 0FF00H, 0A999H, 0FF00H, 0A999H, 0A999H, 0A999H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0A57FH
+  ;WORD  0C57EH,  0FF00H, 0FF00H, 0FF00H, 0A999H, 0FF00H, 0FF00H, 0A46DH, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0A57FH
+  ;WORD  0C57EH,  0A9DEH, 0A9DEH, 0A9DEH, 0A46DH, 0A9DEH, 0A46DH, 0A46DH, 0A46DH, 0A9DEH, 0A9DEH, 0A9DEH, 0A9DEH, 0A9DEH, 0A57FH
+  WORD 0A29FH, 0A29FH, 0A9DEH, 0A29FH, 0A29FH , 0A29FH, 0A29FH, 0A29FH, 0A29FH, 0A29FH, 0A29FH, 0A29FH, 0A29FH, 0A29FH, 0A29FH
+  WORD 0A29FH, 0A0BEH, 0A9DEH, 0A0BEH, 0A0BEH , 0A0BEH, 0A0BEH, 0A0BEH, 0A0BEH, 0A0BEH, 0A0BEH, 0A8C4H, 0A2B4H, 0ACD3H, 0A29FH
+  WORD 0A9DEH, 0A9DEH, 0A0BEH, 0A9DEH, 0A9DEH , 0A0BEH, 0ABBBH, 0A0BEH, 0ABBBH, 0ABBBH, 0ABBBH, 0AF80H, 0AFF0H, 0A2B4H, 0A29FH
+  WORD 0A29FH, 0A0BEH, 0A9DEH, 0A0BEH, 0A0BEH , 0A0BEH, 0ABBBH, 0A0BEH, 0A0BEH, 0ABBBH, 0A0BEH, 0A2B4H, 0AD22H, 0A8C4H, 0A29FH
+  WORD 0A29FH, 0A0BEH, 0A9DEH, 0A0BEH, 0A9DEH , 0A9DEH, 0A46FH, 0A9DEH, 0A46FH, 0A46FH, 0A46FH, 0A9DEH, 0A9DEH, 0A9DEH, 0A29FH
 
 ; *****************************************************************************
 ; * Inicializações dos Registos e Stack Pointer
@@ -120,21 +133,19 @@ inicio:
   MOV  R4, DISPLAYS  ; endereço do periférico dos displays
   MOV  R5, MASCARA   ; para isolar os 4 bits de menor peso, ao ler as colunas do teclado
   MOV  R6, 0000H     ; reseta o valor do display para 0
-  MOV [R4], R0  ; Escreve 0 no display
-  MOV R9, LINHA_SONDA
+  MOV [R4], R0       ; Escreve 0 no display
 
 desenha_painel: ;desenha o painel de instrumentos da nave
-  PUSH R0 ;guarda o valor de R0
-  PUSH R1 ;guarda o valor de R1
-  PUSH R4 ;guarda o valor de R4
-  MOV R4, PAINEL_NAVE
-  MOV R0, LINHA_PAINEL
-  MOV R1, COLUNA_PAINEL
-  CALL desenha_boneco
-  POP R4  ; R4 volta a tomar valor anterior
-  POP R1  ; R1 volta a tomar valor anterior
-  POP R0  ; R0 volta a tomar valor anterior
-
+  PUSH  R0      ; guarda o valor de R0
+  PUSH  R1      ; guarda o valor de R1
+  PUSH  R4      ; guarda o valor de R4
+  MOV   R4, PAINEL_NAVE
+  MOV   R0, LINHA_PAINEL
+  MOV   R1, COLUNA_PAINEL
+  CALL  desenha_boneco
+  POP   R4      ; R4 volta a tomar valor anterior
+  POP   R1      ; R1 volta a tomar valor anterior
+  POP   R0      ; R0 volta a tomar valor anterior
 
 ; *****************************************************************************
 ; Lê o teclado em ciclo e executa as rotinas para cada tecla
@@ -170,10 +181,10 @@ ha_tecla: ; Ciclo enquanto a tecla estiver a ser premida
 ; *   R1: Valor da linha
 ; *****************************************************************************
 valor_teclado:
-  PUSH  R1    ; guarda o valor do R1
-  PUSH  R2    ; guarda o valor do R2
+  PUSH  R1      ; guarda o valor do R1
+  PUSH  R2      ; guarda o valor do R2
 
-  AND R1, R5 ; descarta todos bits exceto 0-3
+  AND   R1, R5  ; descarta todos bits exceto 0-3
 
   ; Converter o nibble linha 1-2-4-8 para 0-1-2-3
   SHR R1, 1
@@ -186,11 +197,11 @@ valor_teclado:
   SHR R2, 2
   SUB R0, R2
 
-  SHL R1, 2   ; Multiplica linha por 4
-  ADD R0, R1  ; 4*linha + coluna
+  SHL R1, 2     ; Multiplica linha por 4
+  ADD R0, R1    ; 4*linha + coluna
 
-  POP   R2    ; R2 volta a tomar valor anterior
-  POP   R1    ; R1 volta a tomar valor anterior
+  POP   R2      ; R2 volta a tomar valor anterior
+  POP   R1      ; R1 volta a tomar valor anterior
   RET
 
 
@@ -264,21 +275,21 @@ escreve_display:
 converte_decimal:
   MOV R1, R6
 
-  MOD R1, R0 ; unidades em base 10
-  DIV R6, R0
+  MOD   R1, R0    ; unidades em base 10
+  DIV   R6, R0
 
   MOV R2, R6
   
-  MOD R2, R0 ; dezenas em base 10
-  DIV R6, R0 ; o resto vai para as dezenas
+  MOD   R2, R0    ; dezenas em base 10
+  DIV   R6, R0    ; o resto vai para as centenas
   
-  SHL R6, 4 ; R6 0000
-  OR R6, R2 ; R6 R2 
+  SHL   R6, 4     ; R6 0000
+  OR    R6, R2    ; R6 R2 
 
-  SHL R6, 4 ; R6 R2 0000
-  OR R6, R1 ; R6 R2 R1
+  SHL   R6, 4     ; R6 R2 0000
+  OR    R6, R1    ; R6 R2 R1
 
-  MOV [R4], R6 ; escreve valor decimal no display
+  MOV   [R4], R6  ; escreve valor decimal no display
 
   POP R2
   POP R6
@@ -293,71 +304,80 @@ move_sonda:
   PUSH R1
   PUSH R2
   PUSH R4
+
+  MOV R4, SONDA_OBJETO
+  MOV R0, [R4]
+  ADD R4, 2
+  MOV R1, [R4]
   MOV R2, 0
-  MOV R1, COLUNA_SONDA
-  MOV R0, R9
   CALL escreve_pixel
-  SUB R9, 1
-  MOV R0, R9
+  SUB R0, 1
   MOV R2, 0FF00H
   CALL escreve_pixel
+  SUB   R4, 2
+  MOV [R4], R0
+
   POP R4
   POP R2
   POP R1
   POP R0
   RET
+
+move_asteroide:
+  PUSH  R3
+
+  MOV   R3, 0           ; som número 0
+  MOV   [TOCA_SOM], R8  ; comando para tocar o som
+  MOV   R3, ASTEROID_0  ; R3 <- endereço do asteroide inicial (Temp)
+
+  CALL move_objeto
+
+  POP   R3
+  RET
+
 ; *****************************************************************************
-; * MOVE_OBJETO - Move, apaga, e desenha um objeto representado 
+; * MOVE_OBJETO - Apaga, move, e desenha um objeto representado 
 ; *   por uma determinada tabela.
 ; * Argumentos:
 ; *   R3 - Objeto
 ; *****************************************************************************
 move_objeto:
-  PUSH R0
-  PUSH R1
-  PUSH R3
-  PUSH R4
-  MOV R8 ,0 ; som número 0
-  MOV [TOCA_SOM], R8 ; comando para tocar o som
-  MOV R3, ASTEROID_0 ; R3 <- endereço do asteroide inicial
+  PUSH  R0
+  PUSH  R1
+  PUSH  R2
+  PUSH  R3
+  PUSH  R4
+  PUSH  R5
 
-  MOV R0, [R3] ; R0 <- posição do asteroide inicial
-  MOV R1, [R3] ; R1 <- posição do asteroide inicial
-  SHR R0, 8 ; isola a linha
-  SHL R1, 8 ; isola a coluna
-  SHR R1, 8 ; mete a coluna no byte à direita
-  
-  ADD R3, 4 ; R3 <- endereço das características do asteroide
-  ; o primeiro sendo a largura 
+  MOV   R0, [R3]  ; R0 <- Linha inicial do objeto (Word)
+  ADD   R3, 2     ; próxima word
+  MOV   R1, [R3]  ; R1 <- Coluna inicial do objeto (Word)
+  ADD   R3, 2     ; próxima word
+  MOV   R2, [R3]  ; Direção de movimento vertical (Word)
+  ADD   R3, 2     ; próxima word
+  MOV   R5, [R3]  ; Direção de movimento horizontal (Word)
 
-  MOV R4, [R3] ; R4 <- largura do asteroide
+  ADD   R3, 2     ; próxima word
+  MOV   R4, [R3]  ; R4 <- endereço do boneco do asteroide (Word)
 
-  CALL apaga_boneco
+  CALL  apaga_boneco
  
-  SUB R3, 4
+  ADD   R0, R2    ; Adiciona direção vertical (cima, baixo)
+  ADD   R1, R5    ; Adiciona direção horizontal (esquerda, direita, nenhuma)
 
-  MOV R0, [R3]
-  ADD R3, 2
+  SUB   R3, 6     ; Endereço da coluna
+  MOV  [R3], R1
+  SUB   R3, 2     ; Endereço da linha
+  MOV  [R3], R0
   
-  MOV R1, [R3]
-  ADD R0, R1
-  SUB R3, 2
-  MOV [R3], R0
-  MOV R1, R0
-  SHR R0, 8
-  SHL R1, 8
-  SHR R1, 8
-
-  ADD R3, 4
-  
- 
-
   CALL desenha_boneco
 
-  POP R4
-  POP R3
-  POP R1
-  POP R0
+  POP   R5
+  POP   R4
+  POP   R3
+  POP   R2
+  POP   R1
+  POP   R0
   RET
 
 ; *****************************************************************************
@@ -382,18 +402,18 @@ desenha_boneco:
   ADD	R4, 2			; endereço da cor do 1º pixel (2 porque a largura é uma word)
   ADD R1, R6
 proxima_linha:
-	MOV	R5, R6    ; obtém a largura do boneco
-  SUB R1, R5    ; reseta a coluna 
-desenha_linha:  ; desenha uma linha de pixels do boneco a partir da tabela
-	MOV	R2, [R4]	; obtém a cor do próximo pixel do boneco
-	CALL	escreve_pixel		; escreve cada pixel do boneco
-	ADD	R4, 2		  ; endereço da cor do próximo pixel (2 porque cada cor de pixel é uma word)
-  ADD  R1, 1    ; próxima coluna
-  SUB  R5, 1  	; menos uma coluna para tratar
-  JNZ  desenha_linha      ; continua até percorrer toda a largura da linha
-  ADD R0, 1     ; próxima linha
-  SUB R7, 1     ; menos uma linha para tratar	
-  JNZ proxima_linha
+	MOV	  R5, R6    ; obtém a largura do boneco
+  SUB   R1, R5    ; reseta a coluna 
+desenha_linha:    ; desenha uma linha de pixels do boneco a partir da tabela
+	MOV	  R2, [R4]	; obtém a cor do próximo pixel do boneco
+	CALL	escreve_pixel
+	ADD	  R4, 2		  ; endereço da cor do próximo pixel (2 porque cada cor de pixel é uma word)
+  ADD   R1, 1     ; próxima coluna
+  SUB   R5, 1  	  ; menos uma coluna para tratar
+  JNZ   desenha_linha   ; continua até percorrer toda a largura da linha
+  ADD   R0, 1     ; próxima linha
+  SUB   R7, 1     ; menos uma linha para tratar	
+  JNZ   proxima_linha
 
   POP R7
   POP R6
@@ -411,6 +431,8 @@ desenha_linha:  ; desenha uma linha de pixels do boneco a partir da tabela
 ; *   R4 - Tabela que define o boneco
 ; *****************************************************************************
 apaga_boneco:
+  PUSH  R0
+  PUSH  R1
 	PUSH	R2
 	PUSH	R4
 	PUSH	R5
@@ -418,30 +440,30 @@ apaga_boneco:
   PUSH  R7
   
 
-  MOV R6, [R4]  ; guarda a largura do boneco
-	ADD	R4, 2			; endereço da altura do boneco (2 porque a largura é uma word)
-	MOV R7, [R4]  ; obtem a altura do boneco
-  ADD	R4, 2			; endereço da cor do 1º pixel (2 porque a largura é uma word)
-  ADD R1, R6
+  MOV   R6, [R4]  ; guarda a largura do boneco (Para alterar R5 e R4 livremente)
+	ADD	  R4, 2			; endereço da altura do boneco (2 porque a largura é uma word)
+	MOV   R7, [R4]  ; obtem a altura do boneco
+  ADD   R1, R6    ; 
 apaga_proxima_linha:
-	MOV	R5, R6    ; obtém a largura do boneco
-  SUB R1, R5    ; reseta a coluna 
-apaga_linha:  ; desenha uma linha de pixels do boneco a partir da tabela
-	MOV	R2, 0	; obtém a cor do próximo pixel do boneco
+	MOV	  R5, R6    ; obtém a largura do boneco
+  SUB   R1, R5    ; reseta a coluna 
+apaga_linha:      ; desenha uma linha de pixels do boneco a partir da tabela
+	MOV	  R2, 0	    ; obtém a cor do próximo pixel do boneco
 	CALL	escreve_pixel		; escreve cada pixel do boneco
-	ADD	R4, 2		  ; endereço da cor do próximo pixel (2 porque cada cor de pixel é uma word)
-  ADD  R1, 1    ; próxima coluna
-  SUB  R5, 1  	; menos uma coluna para tratar
-  JNZ  apaga_linha      ; continua até percorrer toda a largura da linha
-  ADD R0, 1     ; próxima linha
-  SUB R7, 1     ; menos uma linha para tratar	
-  JNZ apaga_proxima_linha
+  ADD   R1, 1     ; próxima coluna
+  SUB   R5, 1  	  ; menos uma coluna para tratar
+  JNZ   apaga_linha      ; continua até percorrer toda a largura da linha
+  ADD   R0, 1     ; próxima linha
+  SUB   R7, 1     ; menos uma linha para tratar	
+  JNZ   apaga_proxima_linha
 
-  POP R7
-  POP R6
-  POP R5
-  POP R4
-  POP R2
+  POP   R7
+  POP   R6
+  POP   R5
+  POP   R4
+  POP   R2
+  POP   R1
+  POP   R0
   RET
 
 
