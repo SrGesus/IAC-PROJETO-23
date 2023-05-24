@@ -14,6 +14,9 @@
   LINHA     EQU 01111H  ; Vai rodar entre 1111H-2222H-4444H-8888H-1111H
   MASCARA   EQU 0FH
 
+  LINHA_PAINEL    EQU 27  ; linha onde se encontra o painel
+  COLUNA_PAINEL   EQU 25  ; coluna onde se encontra o painel
+
   COMANDOS				EQU	6000H			; endereço de base dos comandos do MediaCenter
 
   DEFINE_LINHA    		EQU COMANDOS + 0AH		; endereço do comando para definir a linha
@@ -83,6 +86,15 @@ ASTEROID_0:
   WORD 0101H ; Direção do movimento
   WORD ASTEROIDE_BONECO ; Boneco
 
+PAINEL_NAVE:
+  WORD 15   ; Largura painel
+  WORD 5    ; Altura painel
+  WORD          0, 0, 0FF00H, 0FF00H, 0FF00H , 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0, 0
+  WORD    0, 0FF00H, 0FF00H, 0FF00H, 0FF00H , 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0
+  WORD 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H , 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H
+  WORD 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H , 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H
+  WORD 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H , 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H
+
 ; *****************************************************************************
 ; * Inicializações dos Registos e Stack Pointer
 ; *****************************************************************************
@@ -103,6 +115,18 @@ inicio:
   MOV  R5, MASCARA   ; para isolar os 4 bits de menor peso, ao ler as colunas do teclado
   MOV  R6, 0000H     ; reseta o valor do display para 0
   MOV [R4], R0  ; Escreve 0 no display
+
+desenha_painel: ;desenha o painel de instrumentos da nave
+  PUSH R0 ;guarda o valor de R0
+  PUSH R1 ;guarda o valor de R1
+  PUSH R4 ;guarda o valor de R4
+  MOV R4, PAINEL_NAVE
+  MOV R0, LINHA_PAINEL
+  MOV R1, COLUNA_PAINEL
+  CALL desenha_boneco
+  POP R4  ; R4 volta a tomar valor anterior
+  POP R1  ; R1 volta a tomar valor anterior
+  POP R0  ; R0 volta a tomar valor anterior
 
 ; *****************************************************************************
 ; Lê o teclado em ciclo e executa as rotinas para cada tecla
