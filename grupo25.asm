@@ -11,24 +11,24 @@
   DISPLAYS  EQU 0A000H
   TEC_LIN   EQU 0C000H
   TEC_COL   EQU 0E000H
-  LINHA     EQU 01111H  ; Vai rodar entre 1111H-2222H-4444H-8888H-1111H
+  LINHA     EQU 01111H    ; Vai rodar entre 1111H-2222H-4444H-8888H-1111H
   MASCARA   EQU 0FH
 
   LINHA_PAINEL    EQU 27  ; linha onde se encontra o painel
   COLUNA_PAINEL   EQU 25  ; coluna onde se encontra o painel
 
-  LINHA_SONDA     EQU 26
-  COLUNA_SONDA    EQU 32
+  LINHA_SONDA     EQU 26  ; linha inicial da sonda
+  COLUNA_SONDA    EQU 32  ; linha inicial da sonda
 
   COMANDOS				EQU	6000H			; endereço de base dos comandos do MediaCenter
 
-  DEFINE_LINHA    		EQU COMANDOS + 0AH		; endereço do comando para definir a linha
-  DEFINE_COLUNA   		EQU COMANDOS + 0CH		; endereço do comando para definir a coluna
-  DEFINE_PIXEL    		EQU COMANDOS + 12H		; endereço do comando para escrever um pixel
-  APAGA_AVISO     		EQU COMANDOS + 40H		; endereço do comando para apagar o aviso de nenhum cenário selecionado
-  APAGA_ECRÃ	 		EQU COMANDOS + 02H		; endereço do comando para apagar todos os pixels já desenhados
+  DEFINE_LINHA    		EQU COMANDOS + 0AH	; endereço do comando para definir a linha
+  DEFINE_COLUNA   		EQU COMANDOS + 0CH	; endereço do comando para definir a coluna
+  DEFINE_PIXEL    		EQU COMANDOS + 12H	; endereço do comando para escrever um pixel
+  APAGA_AVISO     		EQU COMANDOS + 40H	; endereço do comando para apagar o aviso de nenhum cenário selecionado
+  APAGA_ECRÃ	 		EQU COMANDOS + 02H		  ; endereço do comando para apagar todos os pixels já desenhados
   SELECIONA_CENARIO_FUNDO  EQU COMANDOS + 42H		; endereço do comando para selecionar uma imagem de fundo
-  TOCA_SOM				EQU COMANDOS + 5AH		; endereço do comando para tocar um som
+  TOCA_SOM				EQU COMANDOS + 5AH		  ; endereço do comando para tocar um som
 
 
 
@@ -78,15 +78,25 @@ ASTEROIDE_BONECO:
   WORD 5    ; Largura boneco
   WORD 5    ;  Altura boneco
 
-  WORD 0FF00H, 0, 0FF00H, 0, 0FF00H
-  WORD 0, 0FF00H, 0, 0FF00H, 0
-  WORD 0FF00H, 0, 0, 0, 0FF00H
-  WORD 0, 0FF00H, 0, 0FF00H, 0
-  WORD 0FF00H, 0, 0FF00H, 0, 0FF00H
+  WORD 0,      0F777H, 0FBBBH, 0F999H, 0
+  WORD 0F999H, 0FBBBH, 0FBBBH, 0FBBBH, 0F999H
+  WORD 0F999H, 0F777H, 0FBBBH, 0F999H, 0F777H
+  WORD 0FBBBH, 0FBBBH, 0F999H, 0F999H, 0F777H
+  WORD 0,      0FBBBH, 0F777H, 0F777H, 0
+
+ASTEROIDE_MINERAVEL_BONECO:
+  WORD 5    ; Largura boneco
+  WORD 5    ;  Altura boneco
+
+  WORD 0,      0A9DEH, 0FBBBH, 0F999H, 0
+  WORD 0F999H, 0FBBBH, 0FBBBH, 0A9DEH, 0A9DEH
+  WORD 0A9DEH, 0A9DEH, 0FBBBH, 0F999H, 0A9DEH
+  WORD 0FBBBH, 0FBBBH, 0F999H, 0A9DEH, 0F777H
+  WORD 0,      0FBBBH, 0A9DEH, 0F777H, 0
 
 ASTEROID_0:
-  WORD 00H, 00H         ; Posição: Primeira word é linha, segundo coluna
-  WORD 01H, 01H         ; Direção do movimento
+  WORD 0000H, 0000H         ; Posição: Primeira word é linha, segundo coluna
+  WORD 0001H, 0001H         ; Direção do movimento
   WORD ASTEROIDE_BONECO ; Boneco
 
 SONDA_BONECO:
@@ -97,17 +107,12 @@ SONDA_BONECO:
 
 SONDA_OBJETO:
   WORD LINHA_SONDA, COLUNA_SONDA  ; Posição: Primeiro word é linha, segundo coluna
-  WORD 0FFFFH, 01H                ; Direção do movimento
+  WORD 0FFFFH, 0000H                ; Direção do movimento
   WORD SONDA_BONECO               ; Boneco
 
 PAINEL_NAVE:
   WORD 15   ; Largura painel
   WORD 5    ; Altura painel
-  ;WORD  0C57EH,  0C57EH, 0C57EH, 0C57EH, 0C57EH, 0C57EH, 0C57EH, 0C57EH, 0C57EH, 0A57FH, 0A57FH, 0A57FH, 0A57FH, 0A57FH, 0A57FH
-  ;WORD  0C57EH,  0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0A57FH
-  ;WORD  0C57EH,  0FF00H, 0FF00H, 0FF00H, 0A999H, 0FF00H, 0A999H, 0A999H, 0A999H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0A57FH
-  ;WORD  0C57EH,  0FF00H, 0FF00H, 0FF00H, 0A999H, 0FF00H, 0FF00H, 0A46DH, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0FF00H, 0A57FH
-  ;WORD  0C57EH,  0A9DEH, 0A9DEH, 0A9DEH, 0A46DH, 0A9DEH, 0A46DH, 0A46DH, 0A46DH, 0A9DEH, 0A9DEH, 0A9DEH, 0A9DEH, 0A9DEH, 0A57FH
   WORD 0A29FH, 0A29FH, 0A9DEH, 0A29FH, 0A29FH , 0A29FH, 0A29FH, 0A29FH, 0A29FH, 0A29FH, 0A29FH, 0A29FH, 0A29FH, 0A29FH, 0A29FH
   WORD 0A29FH, 0A0BEH, 0A9DEH, 0A0BEH, 0A0BEH , 0A0BEH, 0A0BEH, 0A0BEH, 0A0BEH, 0A0BEH, 0A0BEH, 0A8C4H, 0A2B4H, 0ACD3H, 0A29FH
   WORD 0A9DEH, 0A9DEH, 0A0BEH, 0A9DEH, 0A9DEH , 0A0BEH, 0ABBBH, 0A0BEH, 0ABBBH, 0ABBBH, 0ABBBH, 0AF80H, 0AFF0H, 0A2B4H, 0A29FH
@@ -122,7 +127,6 @@ PAINEL_NAVE:
 inicio:
   MOV SP, SP_inicial
 
-
   MOV  [APAGA_AVISO], R1	; apaga o aviso de nenhum cenário selecionado (o valor de R1 não é relevante)
   MOV  [APAGA_ECRÃ], R1	; apaga todos os pixels já desenhados (o valor de R1 não é relevante)
 	MOV	R1, 0			; cenário de fundo número 0
@@ -135,20 +139,11 @@ inicio:
   MOV  R6, 0000H     ; reseta o valor do display para 0
   MOV [R4], R0       ; Escreve 0 no display
 
-desenha_painel: ;desenha o painel de instrumentos da nave
-  PUSH  R0      ; guarda o valor de R0
-  PUSH  R1      ; guarda o valor de R1
-  PUSH  R4      ; guarda o valor de R4
-  MOV   R4, PAINEL_NAVE
-  MOV   R0, LINHA_PAINEL
-  MOV   R1, COLUNA_PAINEL
-  CALL  desenha_boneco
-  POP   R4      ; R4 volta a tomar valor anterior
-  POP   R1      ; R1 volta a tomar valor anterior
-  POP   R0      ; R0 volta a tomar valor anterior
+  CALL desenha_painel
+  CALL move_asteroide
 
 ; *****************************************************************************
-; Lê o teclado em ciclo e executa as rotinas para cada tecla
+; * Lê o teclado em ciclo e executa as rotinas para cada tecla
 ; *****************************************************************************
 ler_teclado:
   MOV R1, LINHA ; Linha toma valor inicial 1111H
@@ -161,7 +156,7 @@ espera_tecla:
   AND R0, R5    ; descarta todos bits exceto 0-3
   CMP R0, 0
   JZ espera_tecla ; se nenhuma tecla for premida continuar ciclo
-  
+
   CALL valor_teclado
   CALL executa_comando
 
@@ -303,26 +298,36 @@ move_sonda:
   PUSH R0
   PUSH R1
   PUSH R2
-  PUSH R4
+  PUSH R3
 
-  MOV R4, SONDA_OBJETO
-  MOV R0, [R4]
-  ADD R4, 2
-  MOV R1, [R4]
-  MOV R2, 0
-  CALL escreve_pixel
-  SUB R0, 1
-  MOV R2, 0FF00H
-  CALL escreve_pixel
-  SUB   R4, 2
-  MOV [R4], R0
+  MOV R3, SONDA_OBJETO
+  CALL move_objeto
 
-  POP R4
+  POP R3
   POP R2
   POP R1
   POP R0
   RET
 
+; *****************************************************************************
+; * DESENHA_PAINEL - desenha o painel de controle da nave
+; *****************************************************************************
+desenha_painel: ;desenha o painel de instrumentos da nave
+  PUSH  R0      ; guarda o valor de R0
+  PUSH  R1      ; guarda o valor de R1
+  PUSH  R4      ; guarda o valor de R4
+  MOV   R4, PAINEL_NAVE
+  MOV   R0, LINHA_PAINEL
+  MOV   R1, COLUNA_PAINEL
+  CALL  desenha_boneco
+  POP   R4      ; R4 volta a tomar valor anterior
+  POP   R1      ; R1 volta a tomar valor anterior
+  POP   R0      ; R0 volta a tomar valor anterior
+  RET
+
+; *****************************************************************************
+; * MOVE_ASTEROIDE - Move e desenha os asteroides
+; *****************************************************************************
 move_asteroide:
   PUSH  R3
 
@@ -477,6 +482,6 @@ apaga_linha:      ; desenha uma linha de pixels do boneco a partir da tabela
 ; *****************************************************************************
 escreve_pixel:
 	MOV  [DEFINE_LINHA], R0		; seleciona a linha
-	MOV  [DEFINE_COLUNA], R1		; seleciona a coluna
+	MOV  [DEFINE_COLUNA], R1	; seleciona a coluna
 	MOV  [DEFINE_PIXEL], R2		; altera a cor do pixel na linha e coluna já selecionadas
 	RET
