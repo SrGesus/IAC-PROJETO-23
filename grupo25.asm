@@ -1,8 +1,10 @@
 ; *****************************************************************************
 ; * IST-UL
-; * 
-; *
-; *
+; * IAC - Projeto Beyond Mars
+; * Grupo 25:
+; * - Joao Miguel Figueiredo Barros               106063
+; * - Guilherme Vaz Rocha                         106171
+; * - Gabriel dos Reis Fonseca Castelo Ferreira   107030
 ; *****************************************************************************
 ;
 ; *****************************************************************************
@@ -22,11 +24,13 @@
 
   COMANDOS				EQU	6000H			; endereço de base dos comandos do MediaCenter
 
-  DEFINE_LINHA    		EQU COMANDOS + 0AH	; endereço do comando para definir a linha
-  DEFINE_COLUNA   		EQU COMANDOS + 0CH	; endereço do comando para definir a coluna
-  DEFINE_PIXEL    		EQU COMANDOS + 12H	; endereço do comando para escrever um pixel
-  APAGA_AVISO     		EQU COMANDOS + 40H	; endereço do comando para apagar o aviso de nenhum cenário selecionado
-  APAGA_ECRÃ	 		EQU COMANDOS + 02H		  ; endereço do comando para apagar todos os pixels já desenhados
+  SEL_ECRÃ        EQU COMANDOS + 04H  ; endereço do comando para selecionar ecrã
+  MOSTRA_ECRÃ     EQU COMANDOS + 06H  ; endereço do comando para mostrar ecrã
+  DEFINE_LINHA    EQU COMANDOS + 0AH	; endereço do comando para definir a linha
+  DEFINE_COLUNA   EQU COMANDOS + 0CH	; endereço do comando para definir a coluna
+  DEFINE_PIXEL    EQU COMANDOS + 12H	; endereço do comando para escrever um pixel
+  APAGA_AVISO     EQU COMANDOS + 40H	; endereço do comando para apagar o aviso de nenhum cenário selecionado
+  APAGA_ECRÃ	 		EQU COMANDOS + 02H	; endereço do comando para apagar todos os pixels já desenhados
   SELECIONA_CENARIO_FUNDO  EQU COMANDOS + 42H		; endereço do comando para selecionar uma imagem de fundo
   TOCA_SOM				EQU COMANDOS + 5AH		  ; endereço do comando para tocar um som
 
@@ -143,34 +147,36 @@ inicio:
   MOV  R4, DISPLAYS  ; endereço do periférico dos displays
   MOV  R5, MASCARA   ; para isolar os 4 bits de menor peso, ao ler as colunas do teclado
   MOV  R6, 0000H     ; reseta o valor do display para 0
-  MOV [R4], R0       ; Escreve 0 no display
+  MOV  [R4], R0      ; Escreve 0 no display
 
   CALL desenha_objetos_iniciais
+
+
 ; *****************************************************************************
 ; * Lê o teclado em ciclo e executa as rotinas para cada tecla
 ; *****************************************************************************
 ler_teclado:
-  MOV R1, LINHA ; Linha toma valor inicial 1111H
-  MOV R0, 0
+  MOV   R1, LINHA ; Linha toma valor inicial 1111H
+  MOV   R0, 0
 
 espera_tecla:
-  ROL R1, 1     ; Roda o valor da linha representado pelo least significant nibble
-  MOVB [R2], R1 ; Escreve no periférico das linhas do teclado
-  MOVB R0, [R3] ; lê para R0 a coluna
-  AND R0, R5    ; descarta todos bits exceto 0-3
-  CMP R0, 0
-  JZ espera_tecla ; se nenhuma tecla for premida continuar ciclo
+  ROL   R1, 1         ; Roda o valor da linha representado pelo least significant nibble
+  MOVB  [R2], R1      ; Escreve no periférico das linhas do teclado
+  MOVB  R0, [R3]      ; lê para R0 a coluna
+  AND   R0, R5        ; descarta todos bits exceto 0-3
+  CMP   R0, 0         ; nenhuma tecla premida é coluna = 0
+  JZ    espera_tecla  ; se nenhuma tecla for premida continuar ciclo
 
   CALL valor_teclado
   CALL executa_comando
 
 ha_tecla: ; Ciclo enquanto a tecla estiver a ser premida
-  MOVB [R2], R1 
-  MOVB R0, [R3]
-  AND R0, R5
-  CMP R0, 0
-  JNZ ha_tecla
-  JMP ler_teclado
+  MOVB  [R2], R1      ; Escreve no periférico das linhas do teclado
+  MOVB  R0, [R3]      ; lê para R0 a coluna
+  AND   R0, R5        ; descarta todos bits exceto 0-3
+  CMP   R0, 0         ; nenhuma tecla premida é coluna = 0
+  JNZ   ha_tecla      ; se tecla ainda estiver premida continuar ciclo
+  JMP   ler_teclado   ; se não, voltar a ler todas as linhas
 
 ; *****************************************************************************
 ; * VALOR_TECLADO - Rotina para converter linha e coluna para valor 
@@ -186,18 +192,18 @@ valor_teclado:
   AND   R1, R5  ; descarta todos bits exceto 0-3
 
   ; Converter o nibble linha 1-2-4-8 para 0-1-2-3
-  SHR R1, 1
-  MOV R2, R1
-  SHR R2, 2
-  SUB R1, R2
+  SHR   R1, 1
+  MOV   R2, R1
+  SHR   R2, 2
+  SUB   R1, R2
   ; mesmo processo para coluna
-  SHR R0, 1
-  MOV R2, R0
-  SHR R2, 2
-  SUB R0, R2
+  SHR   R0, 1
+  MOV   R2, R0
+  SHR   R2, 2
+  SUB   R0, R2
 
-  SHL R1, 2     ; Multiplica linha por 4
-  ADD R0, R1    ; 4*linha + coluna
+  SHL   R1, 2     ; Multiplica linha por 4
+  ADD   R0, R1    ; 4*linha + coluna = valor
 
   POP   R2      ; R2 volta a tomar valor anterior
   POP   R1      ; R1 volta a tomar valor anterior
@@ -212,10 +218,10 @@ executa_comando:
   PUSH R1
   
   MOV  R1, LISTA_ROTINAS
-  SHL  R0, 1   ;multiplica por 2, porque uma word é 2 bytes
-  ADD  R1, R0
-  MOV  R0, [R1]
-  CALL R0
+  SHL  R0, 1    ; multiplica por 2, porque uma word é 2 bytes
+  ADD  R1, R0   ; salta para o comando corresponde 
+  MOV  R0, [R1] ; 
+  CALL R0       ; call lista_rotinas[valor]
   
   POP R1
   RET
@@ -237,7 +243,7 @@ faz_nada:
 ; *****************************************************************************
 incrementa_display:
   ADD R6, 1
-  MOV R0, 10
+  MOV R0, 10  ; Escolhe base 10
   CALL escreve_display
   RET
 
@@ -251,7 +257,7 @@ incrementa_display:
 ; *****************************************************************************
 decrementa_display:
   SUB R6, 1
-  MOV R0, 10
+  MOV R0, 10  ; Escolhe base 10
   CALL escreve_display
   RET
 
@@ -269,7 +275,7 @@ escreve_display:
   PUSH R6
   PUSH R2
 
-converte_decimal: ;converte o número no display num número decimal
+converte_decimal: ; converte o número no display num número decimal
   MOV R1, R6
 
   MOD   R1, R0    ; unidades em base 10
@@ -297,8 +303,10 @@ converte_decimal: ;converte o número no display num número decimal
 ; *****************************************************************************
 move_sonda:
   PUSH R3
+
   MOV  R3, SONDA_OBJETO
   CALL move_objeto
+
   POP  R3
   RET
 
@@ -312,31 +320,43 @@ desenha_objeto:
   PUSH  R1
   PUSH  R3
   PUSH  R4
+
   MOV   R0, [R3]  ; R0 <- Linha inicial do objeto (Word)
   ADD   R3, 2     ; próxima word
   MOV   R1, [R3]  ; R1 <- Coluna inicial do objeto (Word)
   ADD   R3, 6     ; salta 3 words
   MOV   R4, [R3]  ; R4 <- endereço do boneco do asteroide (Word)
   CALL  desenha_boneco
+
   POP   R4
   POP   R3
   POP   R1
   POP   R0
   RET
+
 ; *****************************************************************************
 ; * DESENHA_OBJETOS_INICIAIS - desenha o painel da nave, a sonda, e o
 ; * asteroide na sua posição inicial.
 ; *****************************************************************************
   desenha_objetos_iniciais:
   PUSH  R3
+
+  MOV   R3, 0
+  MOV   [SEL_ECRÃ], R3
   MOV   R3, PAINEL_OBJETO
   CALL  desenha_objeto
+  MOV   R3, 1
+  MOV   [SEL_ECRÃ], R3
+  MOV   R3, 0
+  MOV   [MOSTRA_ECRÃ], R3
   MOV   R3, SONDA_OBJETO
   CALL  desenha_objeto
   MOV   R3, ASTEROID_0
   CALL  desenha_objeto
+
   POP   R3
   RET
+
 ; *****************************************************************************
 ; * MOVE_ASTEROIDE - Move e desenha os asteroides
 ; *****************************************************************************
@@ -408,8 +428,7 @@ desenha_boneco:
 	PUSH	R4  
 	PUSH	R5  
   PUSH  R6  
-  PUSH  R7  
-  
+  PUSH  R7
 
   MOV   R6, [R4]  ; guarda a largura do boneco
 	ADD	  R4, 2			; endereço da altura do boneco (2 porque a largura é uma word)
