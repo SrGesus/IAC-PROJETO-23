@@ -293,14 +293,15 @@ move_sonda:
   PUSH R1
   PUSH R2
   PUSH R4
-  MOV R2, 0
-  MOV R1, COLUNA_SONDA
-  MOV R0, R9
-  CALL escreve_pixel
-  SUB R9, 1
-  MOV R0, R9
-  MOV R2, 0FF00H
-  CALL escreve_pixel
+  MOV R2, 0 ;guarda o valor da cor da sonda (transparente)
+  MOV R1, COLUNA_SONDA  ;guarda o valor da coluna da sonda 
+  ;(constante no movimento)
+  MOV R0, R9  ;guarda a linha da sonda no momento
+  CALL escreve_pixel ;escreve o pixel nas coordenadas e cor selecionadas
+  SUB R9, 1 ; move uma linha para cima
+  MOV R0, R9 ; atualiza a linha da sonda
+  MOV R2, 0FF00H  ;altera a cor do pixel
+  CALL escreve_pixel ;escreve o pixel nas coordenadas e cor selecionadas
   POP R4
   POP R2
   POP R1
@@ -369,11 +370,11 @@ move_objeto:
 ; *   R4 - Tabela que define o boneco
 ; *****************************************************************************
 desenha_boneco:
-	PUSH	R2
-	PUSH	R4
-	PUSH	R5
-  PUSH  R6
-  PUSH  R7
+	PUSH	R2  ;guarda valor de R2
+	PUSH	R4  ;guarda valor de R4
+	PUSH	R5  ;guarda valor de R5
+  PUSH  R6  ;guarda valor de R6
+  PUSH  R7  ;guarad valor de R7
   
 
   MOV R6, [R4]  ; guarda a largura do boneco
@@ -395,11 +396,11 @@ desenha_linha:  ; desenha uma linha de pixels do boneco a partir da tabela
   SUB R7, 1     ; menos uma linha para tratar	
   JNZ proxima_linha
 
-  POP R7
-  POP R6
-  POP R5
-  POP R4
-  POP R2
+  POP R7 ;R7 volta a tomar valor anterior
+  POP R6 ;R6 volta a tomar valor anterior
+  POP R5 ;R5 volta a tomar valor anterior
+  POP R4 ;R4 volta a tomar valor anterior
+  POP R2 ;R2 volta a tomar valor anterior
   RET
 
 ; *****************************************************************************
