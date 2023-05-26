@@ -203,8 +203,6 @@ valor_teclado:
   POP   R1      ; R1 volta a tomar valor anterior
   RET
 
-
-
 ; *****************************************************************************
 ; * EXECUTA_COMANDO - Rotina que executa o commando correspondente a cada tecla
 ; * Argumentos: 
