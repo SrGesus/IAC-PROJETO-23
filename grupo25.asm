@@ -19,28 +19,30 @@
   LINHA_PAINEL    EQU 27  ; linha onde se encontra o painel
   COLUNA_PAINEL   EQU 25  ; coluna onde se encontra o painel
 
-  ECRÃ_PAINEL     EQU 0
-  ECRÃ_ASTEROIDES EQU 1
-  ECRÃ_SONDAS     EQU 2
+  ECRÃ_PAINEL     EQU 0   ; Ecrã onde está representado o painel
+  ECRÃ_ASTEROIDES EQU 1   ; Ecrã onde está representado os asteroides
+  ECRÃ_SONDAS     EQU 2   ; Ecrã onde está representado as sondas
 
   LINHA_SONDA     EQU 27  ; linha inicial da sonda
   LIMITE_SONDA    EQU 38  ; linha final   da sonda
   COLUNA_SONDA    EQU 32  ; linha inicial da sonda
 
+  ENERGIA_INICIAL EQU 100
+
   LIMITE_ESQUERDO EQU 0   ; limite esquerdo dos objetos
   LIMITE_DIREITO  EQU 81  ; limite direito dos objetos
   LIMITE_SUPERIOR EQU 0   ; limite superior dos objetos
-  LIMITE_INFERIOR EQU 63  ; limite inferior dos objetos
+  LIMITE_INFERIOR EQU 32  ; limite inferior dos objetos
 
   COMANDOS				EQU	6000H	  ; endereço de base dos comandos do MediaCenter
+  APAGA_ECRÃ	 		EQU COMANDOS + 00H	; endereço do comando para apagar um dado ecrã
+  APAGA_ECRÃS	 		EQU COMANDOS + 02H	; endereço do comando para apagar todos os pixels já desenhados
   SEL_ECRÃ        EQU COMANDOS + 04H  ; endereço do comando para selecionar ecrã
   MOSTRA_ECRÃ     EQU COMANDOS + 06H  ; endereço do comando para mostrar ecrã
   DEFINE_LINHA    EQU COMANDOS + 0AH	; endereço do comando para definir a linha
   DEFINE_COLUNA   EQU COMANDOS + 0CH	; endereço do comando para definir a coluna
   DEFINE_PIXEL    EQU COMANDOS + 12H	; endereço do comando para escrever um pixel
   APAGA_AVISO     EQU COMANDOS + 40H	; endereço do comando para apagar o aviso de nenhum cenário selecionado
-  APAGA_ECRÃ	 		EQU COMANDOS + 00H	; endereço do comando para apagar um dado ecrã
-  APAGA_ECRÃS	 		EQU COMANDOS + 02H	; endereço do comando para apagar todos os pixels já desenhados
   SEL_CEN_FUNDO   EQU COMANDOS + 42H	; endereço do comando para selecionar uma imagem de fundo
   TOCA_SOM				EQU COMANDOS + 5AH	; endereço do comando para tocar um som
 
@@ -69,6 +71,9 @@ SP_gráficos:
 
 tecla_premida:
   LOCK 0  ; Valor correspondente à tecla premida de 0H a FH
+
+energia:
+  LOCK ENERGIA_INICIAL  ; Valor correspondente à energia da nave no display
 
 atualiza_ecrã:
   LOCK 0  ; Valor irrelevante
@@ -155,26 +160,26 @@ PAINEL_BONECO:
 
   WORD 1    ; Estado de Ativação do Asteroid_0
 ASTEROID_0:
-  WORD 0000H, 0000H     ; Posição: Primeira word é linha, segundo coluna
-  WORD 0001H, 0001H     ; Direção do movimento
+  WORD 0, 0             ; Posição: Primeira word é linha, segundo coluna
+  WORD 1, 1             ; Direção do movimento
   WORD ASTEROIDE_BONECO ; Boneco
 
   WORD 0    ; Estado de Ativação do Asteroid_1
 ASTEROID_1:
-  WORD 0000H, 0000H     ; Posição: Primeira word é linha, segundo coluna
-  WORD 0001H, 0001H     ; Direção do movimento
+  WORD 0, 0             ; Posição: Primeira word é linha, segundo coluna
+  WORD 1, 1             ; Direção do movimento
   WORD ASTEROIDE_BONECO ; Boneco
 
   WORD 0    ; Estado de Ativação do Asteroid_2
 ASTEROID_2:
-  WORD 0000H, 0000H     ; Posição: Primeira word é linha, segundo coluna
-  WORD 0001H, 0001H     ; Direção do movimento
+  WORD 0, 0             ; Posição: Primeira word é linha, segundo coluna
+  WORD 1, 1             ; Direção do movimento
   WORD ASTEROIDE_BONECO ; Boneco
 
   WORD 0  ; Estado de Ativação do Asteroid_3
 ASTEROID_3:
-  WORD 0000H, 0000H     ; Posição: Primeira word é linha, segundo coluna
-  WORD 0001H, 0001H     ; Direção do movimento
+  WORD 0, 0             ; Posição: Primeira word é linha, segundo coluna
+  WORD 1, 1             ; Direção do movimento
   WORD ASTEROIDE_BONECO ; Boneco
 
   WORD 1  ; Estado de Ativação da Sonda_0
@@ -235,8 +240,12 @@ inicio:
   CALL teclado
   CALL control
 
+
+; *****************************************************************************
+; * MAIN - Este processo trata da colisão entre sondas e asteróides
+; *****************************************************************************
 main:
-  YIELD
+  MOV   R3, [atualiza_ecrã] ; só verificar colisão quando ecrã for atualizado
   JMP main
 
 ; *****************************************************************************
@@ -395,7 +404,7 @@ converte_decimal: ; converte o número no display num número decimal
   RET
 
 ; *****************************************************************************
-; * MOVE_SONDA - Move, apaga, e desenha a sonda 
+; * MOVE_SONDA - Move, apaga, e desenha as sondas
 ; *****************************************************************************
 move_sonda:
   PUSH R3
@@ -412,12 +421,15 @@ move_sonda:
 
 ; *****************************************************************************
 ; * PROCESSO
-; * GRÁFICOS - desenha o painel da nave, as sondas, e os
+; * GRÁFICOS - trata de colisões, desenha o painel da nave, as sondas, e os
 ; * asteroides nas suas posições iniciais. Interrupções desativadas no processo.
 ; *****************************************************************************
 PROCESS SP_gráficos
 gráficos:
   MOV   R3, [atualiza_ecrã] ; LOCK até ecrã necessitar atualização
+
+  MOV   R3, ASTEROID_0
+  CALL verifica_limites_asteroide
 
 gráficos_painel:
   MOV   R3, [atualiza_painel]
@@ -440,12 +452,39 @@ gráficos_sondas:
   JMP   gráficos
 
 ; *****************************************************************************
+; * VERIFICA_LIMITES_ASTEROIDE - verifica se um dado asteróide 
+; *   está dentro do ecrã.
+; * Argumentos:
+; *   R3: Objeto Asteróide
+; *****************************************************************************
+verifica_limites_asteroide:
+  MOV   R0,   [R3-2]
+  CMP   R0,   0
+  JZ    sair  ; Se o estado de Ativação do asteróide for 0 então sair
+  MOV   R0,   [R3]    ; Linha Asteróide
+  MOV   R1,   LIMITE_INFERIOR
+  CMP   R0,   R1
+  JGT   reseta_asteroide  ; reseta Asteróide se estiver abaixo do limite inferior
+
+  ; MOV   R1,   [R3+2]  ; Coluna Asteróide
+  JMP   sair
+
+reseta_asteroide:
+  MOV   R0,     0
+  MOV   [R3],   R0
+  MOV   [R3+2], R0
+
+sair:
+  RET
+
+
+; *****************************************************************************
 ; * DESENHA_PAINEL - desenha o objeto painel no ecrã 0
 ; *****************************************************************************
 desenha_painel:
   MOV   R3,           ECRÃ_PAINEL
   MOV   [SEL_ECRÃ],   R3          ; Seleciona ecrã 0
-  MOV   [APAGA_ECRÃ], R3          ; Apaga todos os pixéis neste ecrã
+  ; MOV   [APAGA_ECRÃ], R3          ; Apaga todos os pixéis neste ecrã
 
   MOV   R3, PAINEL_OBJETO
   CALL  desenha_objeto
@@ -585,6 +624,7 @@ move_objeto:
 
   MOV   [R3], R0
   MOV   [R3+2], R1
+
 
   POP   R4
   POP   R2
