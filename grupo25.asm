@@ -2,9 +2,11 @@
 ; * IST-UL
 ; * IAC - Projeto Beyond Mars
 ; * Grupo 25:
-; * - Joao Miguel Figueiredo Barros               106063
-; * - Guilherme Vaz Rocha                         106171
-; * - Gabriel dos Reis Fonseca Castelo Ferreira   107030
+; * IAC - Projeto Beyond Mars
+; * Grupo 25:
+; * - Joao Miguel Figueiredo Barros               106063- Joao Miguel Figueiredo Barros               106063
+; * - Guilherme Vaz Rocha                         106171 - Guilherme Vaz Rocha                         106171
+; * - Gabriel dos Reis Fonseca Castelo Ferreira   107030 - Gabriel dos Reis Fonseca Castelo Ferreira   107030
 ; *****************************************************************************
 ;
 ; *****************************************************************************
@@ -104,11 +106,7 @@ LISTA_ROTINAS_JOGO:
   WORD faz_nada           ; Tecla E
   WORD faz_nada           ; Tecla F
 
-LISTA_INTERRUP:
-  WORD move_asteroide
-  WORD faz_nada_RFE
-  WORD decrementa_display
-  WORD faz_nada_RFE
+
 
     ; *************************************************************************
     ; * Bonecos
@@ -210,37 +208,19 @@ PAINEL_OBJETO:
   PLACE 0000H
 
 inicio:
-  MOV SP,   SP_inicial
-  MOV BTE,  LISTA_INTERRUP
+  MOV SP, SP_inicial
 
-  MOV   [APAGA_AVISO],   R1 ; apaga o aviso de nenhum cenário selecionado (o valor de R1 não é relevante)
-  MOV   [APAGA_ECRÃS],   R1 ; apaga todos os pixels já desenhados (o valor de R1 não é relevante)
-  MOV   R1, 0               ; cenário de fundo número 0
-  MOV   [SEL_CEN_FUNDO], R1 ; seleciona o cenário de fundo
+  MOV  [APAGA_AVISO], R1	; apaga o aviso de nenhum cenário selecionado (o valor de R1 não é relevante)
+  MOV  [APAGA_ECRÃ], R1	; apaga todos os pixels já desenhados (o valor de R1 não é relevante)
+	MOV	R1, 0			; cenário de fundo número 0
+  MOV  [SELECIONA_CENARIO_FUNDO], R1	; seleciona o cenário de fundo
 
-  MOV   R4,   DISPLAYS  ; endereço do periférico dos displays
-  MOV   R5,   MASCARA   ; para isolar os 4 bits de menor peso, ao ler as colunas do teclado
-  MOV   R6,   0000H     ; reseta o valor do display para 0
-  MOV   R6,   100       ; valor inicial da energia
-  MOV   R0,   10        ; escolhe base 10
-  CALL escreve_display  ; escreve 100 no display
-
-  CALL gráficos
-
-  EI0
-  ; EI1
-  EI2
-  ; EI3 ; Ativar todas as interrupções, mas não no processo gráficos
-  EI  ; Para evitar artefactos
-
-
-  CALL teclado
-  CALL control
-
-main:
-  YIELD
-  
-  JMP main
+  MOV  R2, TEC_LIN   ; endereço do periférico das linhas
+  MOV  R3, TEC_COL   ; endereço do periférico das colunas
+  MOV  R4, DISPLAYS  ; endereço do periférico dos displays
+  MOV  R5, MASCARA   ; para isolar os 4 bits de menor peso, ao ler as colunas do teclado
+  MOV  R6, 0000H     ; reseta o valor do display para 0
+  MOV [R4], R0       ; Escreve 0 no display
 
 ; *****************************************************************************
 ; * PROCESSO
@@ -357,10 +337,8 @@ incrementa_display:
 ; *   R6: Valor do display
 ; *****************************************************************************
 decrementa_display:
-  CMP R6, 3
-  JLE ecrã_sem_energia
-  SUB R6, 3
-  MOV R0, 10  ; Escolhe base 10
+  SUB R6, 1
+  MOV R0, 10
   CALL escreve_display
   CMP R6, 3
   RFE
@@ -549,62 +527,60 @@ próximo_pixel:
   RET
 
 ; *****************************************************************************
-; * ESCREVE_PIXEL - Escreve pixel na linha e coluna dos argumentos 
+; * APAGA_BONECO - Desenha um boneco na sua linha e coluna
+;	*   com a forma e cor definidas na tabela.
 ; * Argumentos:
-; *   R0: Linha
-; *   R1: Coluna
-; *   R2: Cor do Pixel
+; *   R0 - Linha
+; *   R1 - Coluna
+; *   R4 - Tabela que define o boneco
 ; *****************************************************************************
-escreve_pixel:
-	MOV  [DEFINE_LINHA], R0		; seleciona a linha
-	MOV  [DEFINE_COLUNA], R1	; seleciona a coluna
-	MOV  [DEFINE_PIXEL], R2		; altera a cor do pixel na linha e coluna já selecionadas
-	RET
-
-; *****************************************************************************
-; * MOVE_ASTEROIDE - Move e desenha os asteroides
-; *****************************************************************************
-move_asteroide:
-  PUSH  R3
-
-  MOV   R3, 0           ; som número 0
-  MOV   [TOCA_SOM], R3  ; comando para tocar o som
-
-  MOV   [atualiza_ecrã],  R3 ; Escreve para LOCK, desbloqueia processo gráfico
-  MOV   [atualiza_asteroides], R3 ; Declara asteroides como desatualizados (0)
-
-  MOV   R3, ASTEROID_0  ; R3 <- endereço do asteroide inicial (Temp)
-  CALL  move_objeto
-
-  POP   R3
-  RFE
-
-; *****************************************************************************
-; * MOVE_OBJETO - Apaga, move, e desenha um objeto representado 
-; *   por uma determinada tabela.
-; * Argumentos:
-; *   R3 - Objeto
-; *****************************************************************************
-move_objeto:
+apaga_boneco:
   PUSH  R0
   PUSH  R1
-  PUSH  R2
-  PUSH  R4
+	PUSH	R2
+	PUSH	R4
+	PUSH	R5
+  PUSH  R6
+  PUSH  R7
+  
 
-  MOV   R0, [R3]  ; R0 <- Linha inicial do objeto (Word)
-  MOV   R1, [R3+2]  ; R1 <- Coluna inicial do objeto (Word)
-  MOV   R2, [R3+4]  ; Direção de movimento vertical (Word)
-  MOV   R4, [R3+6]  ; Direção de movimento horizontal (Word)
+  MOV   R6, [R4]  ; guarda a largura do boneco (Para alterar R5 e R4 livremente)
+	ADD	  R4, 2			; endereço da altura do boneco (2 porque a largura é uma word)
+	MOV   R7, [R4]  ; obtem a altura do boneco
+  ADD   R1, R6    ; 
+apaga_proxima_linha:
+	MOV	  R5, R6    ; obtém a largura do boneco
+  SUB   R1, R5    ; reseta a coluna 
+apaga_linha:      ; desenha uma linha de pixels do boneco a partir da tabela
+	MOV	  R2, 0	    ; obtém a cor do próximo pixel do boneco
+	CALL	escreve_pixel		; escreve cada pixel do boneco
+  ADD   R1, 1     ; próxima coluna
+  SUB   R5, 1  	  ; menos uma coluna para tratar
+  JNZ   apaga_linha      ; continua até percorrer toda a largura da linha
+  ADD   R0, 1     ; próxima linha
+  SUB   R7, 1     ; menos uma linha para tratar	
+  JNZ   apaga_proxima_linha
 
-  ADD   R0, R2    ; Adiciona direção vertical (cima, baixo)
-  ADD   R1, R4    ; Adiciona direção horizontal (esquerda, direita)
-
-  MOV   [R3], R0
-  MOV   [R3+2], R1
-
+  POP   R7
+  POP   R6
+  POP   R5
   POP   R4
   POP   R2
   POP   R1
   POP   R0
   RET
 
+
+
+; *****************************************************************************
+; * ESCREVE_PIXEL - Escreve pixel na linha e coluna dos argumentos 
+; * Argumentos:
+; *   R0 - linha
+; *   R1 - coluna
+; *   R2 - Cor do Pixel
+; *****************************************************************************
+escreve_pixel:
+	MOV  [DEFINE_LINHA], R0		; seleciona a linha
+	MOV  [DEFINE_COLUNA], R1	; seleciona a coluna
+	MOV  [DEFINE_PIXEL], R2		; altera a cor do pixel na linha e coluna já selecionadas
+	RET
