@@ -28,16 +28,16 @@
   COLUNA_SONDA    EQU 32  ; linha inicial da sonda
   SOM_SONDA       EQU 0   ; som do tiro da sonda
 
-  LARG_ASTEROIDE  EQU 5   ; largura de um asteróide
-  ALTU_ASTEROIDE  EQU 5   ; altura de um asteróide
-  METADE_ECRÃ     EQU LIMITE_DIREITO/2-LARG_ASTEROIDE/2
-
   ENERGIA_INICIAL EQU 100
 
   LIMITE_ESQUERDO EQU 0   ; limite esquerdo dos objetos
   LIMITE_DIREITO  EQU 64  ; limite direito dos objetos
   LIMITE_SUPERIOR EQU 0   ; limite superior dos objetos
   LIMITE_INFERIOR EQU 32  ; limite inferior dos objetos
+
+  LARG_ASTEROIDE  EQU 5   ; largura de um asteróide
+  ALTU_ASTEROIDE  EQU 5   ; altura de um asteróide
+  METADE_ECRÃ     EQU LIMITE_DIREITO/2-LARG_ASTEROIDE/2
 
   COMANDOS				EQU	6000H	  ; endereço de base dos comandos do MediaCenter
   APAGA_ECRÃ	 		EQU COMANDOS + 00H	; endereço do comando para apagar um dado ecrã
@@ -70,28 +70,35 @@ SP_control:
   STACK 100H  ; Stack do processo que desenha o ecrã
 SP_gráficos:
 
+  STACK 100H  ; Stack do processo que escreve no display
+SP_display:
+
 ; *****************************************************************************
 ; * Variáveis
 ; *****************************************************************************
 
+; Variável teclado
 tecla_premida:
-  LOCK 0  ; Valor correspondente à tecla premida de 0H a FH
+  LOCK  0 ; Valor correspondente à tecla premida de 0H a FH
 
+; Variáveis display
 energia:
-  LOCK ENERGIA_INICIAL  ; Valor correspondente à energia da nave no display
+  WORD  ENERGIA_INICIAL ; Valor correspondente à energia da nave no display
+atualiza_display:
+  LOCK  ENERGIA_INICIAL ; LOCK Valor correspondente à energia da nave no display
 
+; Variáveis gráficos
 atualiza_ecrã:
-  LOCK 0  ; Valor irrelevante
-
+  LOCK  0 ; Valor irrelevante
 atualiza_painel:
-  WORD 0  ; Valor == 0 causa o painel a ser redesenhado
+  WORD  0 ; Valor == 0 causa o painel a ser redesenhado
 atualiza_luzes:
-  WORD 0  ; Valor == 0 causa as luzes a serem redesenhadas
-
+  WORD  0 ; Valor == 0 causa as luzes a serem redesenhadas
 atualiza_sondas:
-  WORD 0  ; Valor == 0 causa as sondas a ser redesenhadas
+  WORD  0 ; Valor == 0 causa as sondas a ser redesenhadas
+
 atualiza_asteroides:
-  WORD 0  ; Valor == 0 causa os asteroides a ser redesenhados
+  WORD  0 ; Valor == 0 causa os asteroides a ser redesenhados
 
     ; *************************************************************************
     ; * Listas
@@ -105,11 +112,11 @@ LISTA_ROTINAS_JOGO:
   WORD atira_sonda_0      ; Tecla 0
   WORD atira_sonda_1      ; Tecla 1
   WORD atira_sonda_2      ; Tecla 2
-  WORD incrementa_display ; Tecla 3
+  WORD faz_nada           ; Tecla 3
   WORD faz_nada           ; Tecla 4
   WORD move_asteroide     ; Tecla 5
   WORD faz_nada           ; Tecla 6
-  WORD decrementa_display ; Tecla 7
+  WORD faz_nada           ; Tecla 7
   WORD faz_nada           ; Tecla 8
   WORD faz_nada           ; Tecla 9
   WORD faz_nada           ; Tecla A
@@ -123,7 +130,7 @@ LISTA_ROTINAS_JOGO:
 LISTA_INTERRUP:
   WORD move_asteroide
   WORD move_sonda
-  WORD faz_nada_RFE
+  WORD decrementa_energia
   WORD faz_nada_RFE
 
 ; Lista de posições e direções iniciais possíveis para asteróide 
@@ -280,6 +287,22 @@ move_sonda:
   POP  R3
   RFE
 
+
+; *****************************************************************************
+; * INTERRUPÇÃO 2
+; * DECREMENTA_ENERGIA - Decrementa a energia em 3% de 3 em 3 segundos
+; *****************************************************************************
+decrementa_energia:
+  PUSH  R1
+
+  MOV   R1, [energia]
+  SUB   R1, 3
+  MOV   [energia],  R1
+  MOV   [atualiza_display],  R1 ; Valor irrelevante
+
+  POP   R1
+  RFE
+
 ; *****************************************************************************
 ; * MOVE_OBJETO - Apaga, move, e desenha um objeto representado 
 ; *   por uma determinada tabela.
@@ -334,17 +357,17 @@ inicio:
   MOV   R6,   0000H     ; reseta o valor do display para 0
   MOV   [R4], R0      ; Escreve 0 no display
 
-  CALL gráficos
 
   EI0
   EI1
-  ; EI2
+  EI2
   ; EI3 ; Ativar todas as interrupções, mas não no processo gráficos
   EI  ; Para evitar artefactos
 
-
   CALL teclado
   CALL control
+  CALL gráficos
+  CALL display
 
 
 ; *****************************************************************************
@@ -368,7 +391,7 @@ teclado:
   MOV   R4, MASCARA   ; para isolar os 4 bits de menor peso, ao ler as colunas do teclado
 
 espera_tecla: ; Ciclo enquanto a tecla NÃO estiver a ser premida
-  WAIT        ; Adormece quando os outros processos estão bloqueados e não há teclas/interrupções ativas
+  YIELD        ; Adormece quando os outros processos estão bloqueados e não há teclas/interrupções ativas
   ROL   R1,   1       ; Roda o valor da linha (representado pelo least significant nibble)
   MOVB  [R2], R1      ; Escreve no periférico das linhas do teclado
   MOVB  R0,   [R3]    ; lê para R0 a coluna
@@ -425,6 +448,52 @@ valor_teclado:
 
 ; *****************************************************************************
 ; * PROCESSO
+; * DISPLAY - Processo que executa o commando correspondente a cada tecla
+; *****************************************************************************
+PROCESS SP_display
+display:
+  MOV   R0, 10  ; Escreve em base 10
+display_ciclo:
+  MOV   R6, [atualiza_display]
+  CALL  escreve_display
+  JMP   display_ciclo
+
+; *****************************************************************************
+; * ESCREVE_DISPLAY - Transforma valor Hex noutra base (de 1 a 16), num limite 
+; *   de 3 dígitos para base 10 é válido de 0 a 999 (0H a 3E7H) 
+; *   e representa-o no display.
+; * Argumentos:
+; *   R0: Base (Denominador das divisões)
+; *   R1: Valor é consumido
+; *   R6: Valor do display
+; *****************************************************************************
+escreve_display:
+  PUSH R6
+  PUSH R2
+
+converte_decimal: ; converte o número no display num número decimal
+  MOV   R1,   R6
+
+  MOD   R1,   R0  ; unidades em base 10 no nibble low
+  DIV   R6,   R0  ; Remove unidades
+
+  MOV   R2,   R6  ; R2 <- Valor sem unidades
+  MOD   R2,   R0  ; dezenas em base 10 no nibble low
+  DIV   R6,   R0  ; Remove dezenas
+  
+  SHL   R6,   4   ; R6 0000
+  OR    R6,   R2  ; R6 R2 
+  SHL   R6,   4   ; R6 R2 0000
+  OR    R6,   R1  ; R6 R2 R1
+
+  MOV   [DISPLAYS], R6  ; escreve valor decimal no display
+
+  POP R2
+  POP R6
+  RET
+
+; *****************************************************************************
+; * PROCESSO
 ; * CONTROL - Processo que executa o commando correspondente a cada tecla
 ; *****************************************************************************
 PROCESS SP_control
@@ -476,11 +545,11 @@ atirar:
 atira_sonda:
   MOV   R0, [R3-2]  ; Estado de ativação da sonda
   CMP   R0, 0
-  JNZ   sair        ; Se sonda estiver ativa não fazer nada
+  JNZ   sair_atira_sonda  ; Se sonda estiver ativa não fazer nada
 
 
-  MOV   R0, SOM_SONDA   ; som número 0
-  MOV   [TOCA_SOM], R0  ; comando para tocar o som
+  MOV   R0, SOM_SONDA     ; som número 0
+  MOV   [TOCA_SOM], R0    ; comando para tocar o som
 
   MOV   R0, [R3-4]  ; R0 <- Coluna inicial da sonda
   MOV   [R3+2], R0  ; Reseta coluna da sonda
@@ -488,68 +557,7 @@ atira_sonda:
   MOV   [R3], R0    ; Reseta linha da sonda
   MOV   [R3-2], R0  ; Ativa a sonda (verifica-se R0 != 0)
 
-  RET
-
-
-; *****************************************************************************
-; * INCREMENTA_DISPLAY - Incrementa o Display por um valor
-; * Argumentos:
-; *   R0, R1: Valor é consumido
-; *   R4: Endereço do display
-; *   R6: Valor do display
-; *****************************************************************************
-incrementa_display:
-  ADD R6, 1
-  MOV R0, 10  ; Escolhe base 10
-  CALL escreve_display
-  RET
-
-; *****************************************************************************
-; * DECREMENTA_DISPLAY - Decrementa o Display por um valor
-; * Argumentos:
-; *   R0, R1: Valor é consumido
-; *   R4: Endereço do display
-; *   R6: Valor do display
-; *****************************************************************************
-decrementa_display:
-  SUB R6, 1
-  MOV R0, 10  ; Escolhe base 10
-  CALL escreve_display
-  RET
-
-; *****************************************************************************
-; * ESCREVE_DISPLAY - Transforma valor Hex noutra base (de 1 a 16), num limite 
-; *   de 3 dígitos para base 10 é válido de 0 a 999 (0H a 3E7H) 
-; *   e representa-o no display.
-; * Argumentos:
-; *   R0: Base (Denominador das divisões)
-; *   R1: Valor é consumido
-; *   R4: Endereço do display
-; *   R6: Valor do display
-; *****************************************************************************
-escreve_display:
-  PUSH R6
-  PUSH R2
-
-converte_decimal: ; converte o número no display num número decimal
-  MOV   R1,   R6
-
-  MOD   R1,   R0  ; unidades em base 10 no nibble low
-  DIV   R6,   R0  ; Remove unidades
-
-  MOV   R2,   R6  ; R2 <- Valor sem unidades
-  MOD   R2,   R0  ; dezenas em base 10 no nibble low
-  DIV   R6,   R0  ; Remove dezenas
-  
-  SHL   R6,   4   ; R6 0000
-  OR    R6,   R2  ; R6 R2 
-  SHL   R6,   4   ; R6 R2 0000
-  OR    R6,   R1  ; R6 R2 R1
-
-  MOV   [R4], R6  ; escreve valor decimal no display
-
-  POP R2
-  POP R6
+sair_atira_sonda:
   RET
 
 ; *****************************************************************************
@@ -597,21 +605,21 @@ gráficos_sondas:
 verifica_limites_asteroide:
   MOV   R0,   [R3-2]  ; Estado de ativação do asteróide
   CMP   R0,   0
-  JZ    sair  ; Se o estado de Ativação do asteróide for 0 então sair
+  JZ    sair_lim_ast  ; Se o estado de Ativação do asteróide for 0 então sair
   MOV   R0,   [R3]    ; Linha Asteróide
   MOV   R1,   LIMITE_INFERIOR
   CMP   R0,   R1
   JGT   reseta_asteroide  ; reseta Asteróide se estiver abaixo do limite inferior
 
   ; MOV   R1,   [R3+2]  ; Coluna Asteróide
-  JMP   sair
+  JMP   sair_lim_ast
 
 reseta_asteroide:
   MOV   R0,     0
   MOV   [R3],   R0
   MOV   [R3+2], R0
 
-sair:
+sair_lim_ast:
   RET
 
 ; *****************************************************************************
@@ -624,14 +632,16 @@ sair:
 verifica_limites_sonda:
   MOV   R0,   [R3-2]  ; Estado de ativação da sonda
   CMP   R0,   0
-  JZ    sair  ; Se o estado de Ativação da sonda for 0 então sair
+  JZ    sair_lim_sonda  ; Se o estado de Ativação da sonda for 0 então sair
   MOV   R0,   [R3]    ; Linha sonda
   MOV   R1,   LIMITE_SONDA
-  SUB   R0,   R1
+  CMP   R0,   R1
+  JGT   sair_lim_sonda  ; Se sonda estiver dentro de limites então sair
 
-  MOV   [R3-2], R0 ; Estado da ativação = Linha - Limite sonda
-  ; Se Linha = Limite então estado = 0 (sonda inativa)
+  MOV   R0, 0
+  MOV   [R3-2], R0 ; Desativar sonda se estiver fora de limites
 
+sair_lim_sonda:
   RET
 
 ; *****************************************************************************
