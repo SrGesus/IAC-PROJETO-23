@@ -24,13 +24,18 @@
   ECRÃ_SONDAS     EQU 2   ; Ecrã onde está representado as sondas
 
   LINHA_SONDA     EQU 27  ; linha inicial da sonda
-  LIMITE_SONDA    EQU 38  ; linha final   da sonda
+  LIMITE_SONDA    EQU 15  ; linha final   da sonda
   COLUNA_SONDA    EQU 32  ; linha inicial da sonda
+  SOM_SONDA       EQU 0   ; som do tiro da sonda
+
+  LARG_ASTEROIDE  EQU 5   ; largura de um asteróide
+  ALTU_ASTEROIDE  EQU 5   ; altura de um asteróide
+  METADE_ECRÃ     EQU LIMITE_DIREITO/2-LARG_ASTEROIDE/2
 
   ENERGIA_INICIAL EQU 100
 
   LIMITE_ESQUERDO EQU 0   ; limite esquerdo dos objetos
-  LIMITE_DIREITO  EQU 81  ; limite direito dos objetos
+  LIMITE_DIREITO  EQU 64  ; limite direito dos objetos
   LIMITE_SUPERIOR EQU 0   ; limite superior dos objetos
   LIMITE_INFERIOR EQU 32  ; limite inferior dos objetos
 
@@ -80,21 +85,26 @@ atualiza_ecrã:
 
 atualiza_painel:
   WORD 0  ; Valor == 0 causa o painel a ser redesenhado
+atualiza_luzes:
+  WORD 0  ; Valor == 0 causa as luzes a serem redesenhadas
+
 atualiza_sondas:
   WORD 0  ; Valor == 0 causa as sondas a ser redesenhadas
 atualiza_asteroides:
   WORD 0  ; Valor == 0 causa os asteroides a ser redesenhados
 
     ; *************************************************************************
-    ; * Rotinas correspondentes a cada tecla
+    ; * Listas
     ; *************************************************************************
+; Lista de rotinas em efeito para cada tecla
 LISTA_ROTINAS:
   WORD LISTA_ROTINAS_JOGO ; Lista rotinas default
 
+; Rotina correspondente a cada tecla durante o jogo normal
 LISTA_ROTINAS_JOGO:
-  WORD faz_nada           ; Tecla 0
-  WORD move_sonda         ; Tecla 1
-  WORD faz_nada           ; Tecla 2
+  WORD atira_sonda_0      ; Tecla 0
+  WORD atira_sonda_1      ; Tecla 1
+  WORD atira_sonda_2      ; Tecla 2
   WORD incrementa_display ; Tecla 3
   WORD faz_nada           ; Tecla 4
   WORD move_asteroide     ; Tecla 5
@@ -109,11 +119,20 @@ LISTA_ROTINAS_JOGO:
   WORD faz_nada           ; Tecla E
   WORD faz_nada           ; Tecla F
 
+; Lista de rotinas de interrupção
 LISTA_INTERRUP:
   WORD move_asteroide
+  WORD move_sonda
   WORD faz_nada_RFE
   WORD faz_nada_RFE
-  WORD faz_nada_RFE
+
+; Lista de posições e direções iniciais possíveis para asteróide 
+LISTA_ASTEROIDES_POSSIVEIS:
+  WORD 0, 0, 1, 1
+  WORD 0, METADE_ECRÃ, 1, 1
+  WORD 0, METADE_ECRÃ, 1, -1
+  WORD 0, METADE_ECRÃ, 1, 0
+  WORD 0, LIMITE_DIREITO-LARG_ASTEROIDE, 1, -1
 
     ; *************************************************************************
     ; * Bonecos
@@ -160,9 +179,11 @@ PAINEL_BONECO:
 
   WORD 1    ; Estado de Ativação do Asteroid_0
 ASTEROID_0:
-  WORD 0, 0             ; Posição: Primeira word é linha, segundo coluna
+  WORD 0, LIMITE_DIREITO/2-LARG_ASTEROIDE/2             ; Posição: Primeira word é linha, segundo coluna
   WORD 1, 1             ; Direção do movimento
   WORD ASTEROIDE_BONECO ; Boneco
+
+; **************
 
   WORD 0    ; Estado de Ativação do Asteroid_1
 ASTEROID_1:
@@ -170,11 +191,15 @@ ASTEROID_1:
   WORD 1, 1             ; Direção do movimento
   WORD ASTEROIDE_BONECO ; Boneco
 
+; **************
+
   WORD 0    ; Estado de Ativação do Asteroid_2
 ASTEROID_2:
   WORD 0, 0             ; Posição: Primeira word é linha, segundo coluna
   WORD 1, 1             ; Direção do movimento
   WORD ASTEROIDE_BONECO ; Boneco
+
+; **************
 
   WORD 0  ; Estado de Ativação do Asteroid_3
 ASTEROID_3:
@@ -182,24 +207,36 @@ ASTEROID_3:
   WORD 1, 1             ; Direção do movimento
   WORD ASTEROIDE_BONECO ; Boneco
 
+; **************
+
+  WORD COLUNA_SONDA-6 ; Coluna inicial sonda
   WORD 1  ; Estado de Ativação da Sonda_0
 SONDA_0:  ; Sonda diagonal-esquerda
   WORD LINHA_SONDA, COLUNA_SONDA-6  ; Posição: Primeiro word é linha, segundo coluna
   WORD -1, -1                       ; Direção do movimento
   WORD SONDA_BONECO                 ; Boneco
 
+; **************
+
+  WORD COLUNA_SONDA   ; Coluna inicial sonda
   WORD 0    ; Estado de Ativação da Sonda_1
 SONDA_1:    ; Sonda vertical-cima
   WORD LINHA_SONDA, COLUNA_SONDA  ; Posição: Primeiro word é linha, segundo coluna
   WORD -1, 0                      ; Direção do movimento
   WORD SONDA_BONECO               ; Boneco
 
+; **************
+
+  WORD COLUNA_SONDA+6  ; Coluna inicial sonda
   WORD 0    ; Estado de Ativação da Sonda_2
 SONDA_2:    ; Sonda diagonal-direita
   WORD LINHA_SONDA, COLUNA_SONDA+6  ; Posição: Primeiro word é linha, segundo coluna
   WORD -1, 1                        ; Direção do movimento
   WORD SONDA_BONECO                 ; Boneco
 
+; **************
+
+  ; Estado ativação sempre != 0 (SONDA_BONECO)
 PAINEL_OBJETO:
   WORD LINHA_PAINEL, COLUNA_PAINEL
   WORD 0000H, 0000H
@@ -208,6 +245,75 @@ PAINEL_OBJETO:
     ; *************************************************************************
     ; * Listas de objetos
     ; *************************************************************************
+
+; *****************************************************************************
+; * INTERRUPÇÃO 0
+; * MOVE_ASTEROIDE - Move e desenha os asteroides
+; *****************************************************************************
+move_asteroide:
+  PUSH  R3
+
+  MOV   R3, 0
+  MOV   [atualiza_ecrã],  R3 ; Escreve para LOCK, desbloqueia processo gráfico
+  MOV   [atualiza_asteroides], R3 ; Declara asteroides como desatualizados (0)
+
+  MOV   R3, ASTEROID_0  ; R3 <- endereço do asteroide inicial (Temp)
+  CALL  move_objeto
+
+  POP   R3
+  RFE
+
+; *****************************************************************************
+; * INTERRUPÇÃO 1
+; * MOVE_SONDA - Move as sondas
+; *****************************************************************************
+move_sonda:
+  PUSH R3
+
+  MOV   R3, 0
+  MOV   [atualiza_ecrã],  R3 ; Escreve para LOCK, desbloqueia processo gráfico
+  MOV   [atualiza_sondas], R3 ; Declara sondas como desatualizados (0)
+
+  MOV  R3, SONDA_0
+  CALL move_objeto
+
+  POP  R3
+  RFE
+
+; *****************************************************************************
+; * MOVE_OBJETO - Apaga, move, e desenha um objeto representado 
+; *   por uma determinada tabela.
+; * Argumentos:
+; *   R3 - Objeto com estado de ativação
+; *****************************************************************************
+move_objeto:
+  PUSH  R0
+  PUSH  R1
+  MOV   R0, [R3-2]  ; Estado ativação objeto
+  MOV   R1, 0
+  CMP   R0, R1      ; Se estado for 0 não mover objeto inativo
+  JZ    sair_move_objeto
+  PUSH  R2
+  PUSH  R4
+
+  MOV   R0, [R3]    ; R0 <- Linha inicial do objeto (Word)
+  MOV   R1, [R3+2]  ; R1 <- Coluna inicial do objeto (Word)
+  MOV   R2, [R3+4]  ; Direção de movimento vertical (Word)
+  MOV   R4, [R3+6]  ; Direção de movimento horizontal (Word)
+
+  ADD   R0, R2    ; Adiciona direção vertical (cima, baixo)
+  ADD   R1, R4    ; Adiciona direção horizontal (esquerda, direita)
+
+  MOV   [R3], R0
+  MOV   [R3+2], R1
+
+  POP   R4
+  POP   R2
+sair_move_objeto:
+  POP   R1
+  POP   R0
+  RET
+
 
 ; *****************************************************************************
 ; * Inicializações dos Registos e Stack Pointer
@@ -231,7 +337,7 @@ inicio:
   CALL gráficos
 
   EI0
-  ; EI1
+  EI1
   ; EI2
   ; EI3 ; Ativar todas as interrupções, mas não no processo gráficos
   EI  ; Para evitar artefactos
@@ -342,6 +448,49 @@ faz_nada:
 faz_nada_RFE:
   RFE
 
+
+; *****************************************************************************
+; * ATIRA_SONDA_X - Ativa a sonda X e coloca-a na sua respetiva posição
+; * Argumentos:
+; *   R3: Valor é consumido
+; *****************************************************************************
+atira_sonda_0:
+  MOV   R3, SONDA_0
+  JMP   atirar
+atira_sonda_1:
+  MOV   R3, SONDA_1
+  JMP   atirar
+atira_sonda_2:
+  MOV   R3, SONDA_2
+  JMP   atirar
+atirar:
+  CALL  atira_sonda
+  RET
+
+; *****************************************************************************
+; * ATIRA_SONDA - Ativa uma sonda 
+; * Argumentos:
+; *   R0: Valor é consumido
+; *   R3: Objeto Sonda
+; *****************************************************************************
+atira_sonda:
+  MOV   R0, [R3-2]  ; Estado de ativação da sonda
+  CMP   R0, 0
+  JNZ   sair        ; Se sonda estiver ativa não fazer nada
+
+
+  MOV   R0, SOM_SONDA   ; som número 0
+  MOV   [TOCA_SOM], R0  ; comando para tocar o som
+
+  MOV   R0, [R3-4]  ; R0 <- Coluna inicial da sonda
+  MOV   [R3+2], R0  ; Reseta coluna da sonda
+  MOV   R0, LINHA_SONDA ; R0 <- Linha inicial da sonda
+  MOV   [R3], R0    ; Reseta linha da sonda
+  MOV   [R3-2], R0  ; Ativa a sonda (verifica-se R0 != 0)
+
+  RET
+
+
 ; *****************************************************************************
 ; * INCREMENTA_DISPLAY - Incrementa o Display por um valor
 ; * Argumentos:
@@ -404,22 +553,6 @@ converte_decimal: ; converte o número no display num número decimal
   RET
 
 ; *****************************************************************************
-; * MOVE_SONDA - Move, apaga, e desenha as sondas
-; *****************************************************************************
-move_sonda:
-  PUSH R3
-
-  MOV   R3, 0
-  MOV   [atualiza_ecrã],  R3 ; Escreve para LOCK, desbloqueia processo gráfico
-  MOV   [atualiza_sondas], R3 ; Declara sondas como desatualizados (0)
-
-  MOV  R3, SONDA_0
-  CALL move_objeto
-
-  POP  R3
-  RET
-
-; *****************************************************************************
 ; * PROCESSO
 ; * GRÁFICOS - trata de colisões, desenha o painel da nave, as sondas, e os
 ; * asteroides nas suas posições iniciais. Interrupções desativadas no processo.
@@ -430,6 +563,9 @@ gráficos:
 
   MOV   R3, ASTEROID_0
   CALL verifica_limites_asteroide
+
+  MOV   R3, SONDA_0
+  CALL  verifica_limites_sonda
 
 gráficos_painel:
   MOV   R3, [atualiza_painel]
@@ -455,10 +591,11 @@ gráficos_sondas:
 ; * VERIFICA_LIMITES_ASTEROIDE - verifica se um dado asteróide 
 ; *   está dentro do ecrã.
 ; * Argumentos:
+; *   R0: Valor é consumido
 ; *   R3: Objeto Asteróide
 ; *****************************************************************************
 verifica_limites_asteroide:
-  MOV   R0,   [R3-2]
+  MOV   R0,   [R3-2]  ; Estado de ativação do asteróide
   CMP   R0,   0
   JZ    sair  ; Se o estado de Ativação do asteróide for 0 então sair
   MOV   R0,   [R3]    ; Linha Asteróide
@@ -477,6 +614,25 @@ reseta_asteroide:
 sair:
   RET
 
+; *****************************************************************************
+; * VERIFICA_LIMITES_SONDA - verifica se uma dada sonda 
+; *   está dentro dos limites
+; * Argumentos:
+; *   R0: Valor é consumido
+; *   R3: Objeto sonda
+; *****************************************************************************
+verifica_limites_sonda:
+  MOV   R0,   [R3-2]  ; Estado de ativação da sonda
+  CMP   R0,   0
+  JZ    sair  ; Se o estado de Ativação da sonda for 0 então sair
+  MOV   R0,   [R3]    ; Linha sonda
+  MOV   R1,   LIMITE_SONDA
+  SUB   R0,   R1
+
+  MOV   [R3-2], R0 ; Estado da ativação = Linha - Limite sonda
+  ; Se Linha = Limite então estado = 0 (sonda inativa)
+
+  RET
 
 ; *****************************************************************************
 ; * DESENHA_PAINEL - desenha o objeto painel no ecrã 0
@@ -503,7 +659,7 @@ desenha_asteroides:
   MOV   R3, ASTEROID_0
   CALL  desenha_objeto
 
-  MOV   [atualiza_painel], R3 ; R3 é sempre != de 0, logo marca asteroides como atualizados
+  MOV   [atualiza_asteroides], R3 ; R3 é sempre != de 0, logo marca asteroides como atualizados
   RET
 
 ; *****************************************************************************
@@ -517,7 +673,7 @@ desenha_sondas:
   MOV   R3, SONDA_0
   CALL  desenha_objeto
 
-  MOV   [atualiza_painel], R3 ; R3 é sempre != de 0, logo marca sondas como atualizadas
+  MOV   [atualiza_sondas], R3 ; R3 é sempre != de 0, logo marca sondas como atualizadas
   RET
 
 
@@ -529,11 +685,17 @@ desenha_sondas:
 ; *****************************************************************************
 desenha_objeto:
 
-  MOV   R0, [R3]  ; R0 <- Linha inicial do objeto (Word)
+  MOV   R0, [R3-2]  ; Estado ativação objeto
+  MOV   R1, 0
+  CMP   R0, R1      ; Se estado for 0 não mover objeto
+  JZ    sair_desenha_objeto
+
+  MOV   R0, [R3]    ; R0 <- Linha inicial do objeto (Word)
   MOV   R1, [R3+2]  ; R1 <- Coluna inicial do objeto (Word)
   MOV   R4, [R3+8]  ; R4 <- endereço do boneco do asteroide (Word)
   CALL  desenha_boneco
 
+sair_desenha_objeto:
   RET
 
 ; *****************************************************************************
@@ -583,51 +745,3 @@ escreve_pixel:
 	MOV  [DEFINE_PIXEL], R2		; altera a cor do pixel na linha e coluna já selecionadas
 	RET
 
-
-; *****************************************************************************
-; * MOVE_ASTEROIDE - Move e desenha os asteroides
-; *****************************************************************************
-move_asteroide:
-  PUSH  R3
-
-  MOV   R3, 0           ; som número 0
-  MOV   [TOCA_SOM], R3  ; comando para tocar o som
-
-  MOV   [atualiza_ecrã],  R3 ; Escreve para LOCK, desbloqueia processo gráfico
-  MOV   [atualiza_asteroides], R3 ; Declara asteroides como desatualizados (0)
-
-  MOV   R3, ASTEROID_0  ; R3 <- endereço do asteroide inicial (Temp)
-  CALL  move_objeto
-
-  POP   R3
-  RFE
-
-; *****************************************************************************
-; * MOVE_OBJETO - Apaga, move, e desenha um objeto representado 
-; *   por uma determinada tabela.
-; * Argumentos:
-; *   R3 - Objeto
-; *****************************************************************************
-move_objeto:
-  PUSH  R0
-  PUSH  R1
-  PUSH  R2
-  PUSH  R4
-
-  MOV   R0, [R3]  ; R0 <- Linha inicial do objeto (Word)
-  MOV   R1, [R3+2]  ; R1 <- Coluna inicial do objeto (Word)
-  MOV   R2, [R3+4]  ; Direção de movimento vertical (Word)
-  MOV   R4, [R3+6]  ; Direção de movimento horizontal (Word)
-
-  ADD   R0, R2    ; Adiciona direção vertical (cima, baixo)
-  ADD   R1, R4    ; Adiciona direção horizontal (esquerda, direita)
-
-  MOV   [R3], R0
-  MOV   [R3+2], R1
-
-
-  POP   R4
-  POP   R2
-  POP   R1
-  POP   R0
-  RET
