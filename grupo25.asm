@@ -246,7 +246,7 @@ SONDA_2:    ; Sonda diagonal-direita
   ; Estado ativação sempre != 0 (SONDA_BONECO)
 PAINEL_OBJETO:
   WORD LINHA_PAINEL, COLUNA_PAINEL
-  WORD 0000H, 0000H
+  WORD 0, 0   ; Não há movimento
   WORD PAINEL_BONECO
 
     ; *************************************************************************
@@ -282,6 +282,12 @@ move_sonda:
   MOV   [atualiza_sondas], R3 ; Declara sondas como desatualizados (0)
 
   MOV  R3, SONDA_0
+  CALL move_objeto
+
+  MOV  R3, SONDA_1
+  CALL move_objeto
+
+  MOV  R3, SONDA_2
   CALL move_objeto
 
   POP  R3
@@ -572,9 +578,6 @@ gráficos:
   MOV   R3, ASTEROID_0
   CALL verifica_limites_asteroide
 
-  MOV   R3, SONDA_0
-  CALL  verifica_limites_sonda
-
 gráficos_painel:
   MOV   R3, [atualiza_painel]
   CMP   R3, 0
@@ -630,6 +633,7 @@ sair_lim_ast:
 ; *   R3: Objeto sonda
 ; *****************************************************************************
 verifica_limites_sonda:
+
   MOV   R0,   [R3-2]  ; Estado de ativação da sonda
   CMP   R0,   0
   JZ    sair_lim_sonda  ; Se o estado de Ativação da sonda for 0 então sair
@@ -680,7 +684,17 @@ desenha_sondas:
   MOV   [SEL_ECRÃ],   R3          ; Seleciona ecrã 2
   MOV   [APAGA_ECRÃ], R3          ; Apaga todos os pixéis neste ecrã
 
+
   MOV   R3, SONDA_0
+  CALL  verifica_limites_sonda
+  CALL  desenha_objeto
+
+  MOV   R3, SONDA_1
+  CALL  verifica_limites_sonda
+  CALL  desenha_objeto
+
+  MOV   R3, SONDA_2
+  CALL  verifica_limites_sonda
   CALL  desenha_objeto
 
   MOV   [atualiza_sondas], R3 ; R3 é sempre != de 0, logo marca sondas como atualizadas
