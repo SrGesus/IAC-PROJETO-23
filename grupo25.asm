@@ -545,6 +545,26 @@ valor_teclado:
   RET
 
 ; *****************************************************************************
+; * PAUSA - interrompe o jogo (pausa nas interrupções)
+; *****************************************************************************
+pausa:
+  PUSH R1
+  DI
+  MOV R1, LISTA_ROTINAS_PAUSA
+  MOV [LISTA_ROTINAS], R1
+  POP R1
+  RET
+; *****************************************************************************
+; * CONTINUA - continua o jogo
+; *****************************************************************************
+continua:
+  PUSH R1
+  EI
+  MOV R1, LISTA_ROTINAS_JOGO
+  MOV [LISTA_ROTINAS], R1
+  POP R1
+  RET
+; *****************************************************************************
 ; * PROCESSO
 ; * CONTROL - Processo que executa o commando correspondente a cada tecla
 ; *****************************************************************************
