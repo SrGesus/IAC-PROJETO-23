@@ -106,6 +106,7 @@ atualiza_asteroides:
 ; Lista de rotinas em efeito para cada tecla
 LISTA_ROTINAS:
   WORD LISTA_ROTINAS_JOGO ; Lista rotinas default
+  WORD LISTA_ROTINAS_PAUSA; Lista rotinas correspondente ao jogo em pausa
 
 ; Rotina correspondente a cada tecla durante o jogo normal
 LISTA_ROTINAS_JOGO:
@@ -114,7 +115,7 @@ LISTA_ROTINAS_JOGO:
   WORD atira_sonda_2      ; Tecla 2
   WORD faz_nada           ; Tecla 3
   WORD faz_nada           ; Tecla 4
-  WORD move_asteroide     ; Tecla 5
+  WORD faz_nada           ; Tecla 5
   WORD faz_nada           ; Tecla 6
   WORD faz_nada           ; Tecla 7
   WORD faz_nada           ; Tecla 8
@@ -122,7 +123,26 @@ LISTA_ROTINAS_JOGO:
   WORD faz_nada           ; Tecla A
   WORD faz_nada           ; Tecla B
   WORD faz_nada           ; Tecla C
-  WORD faz_nada           ; Tecla D
+  WORD pausa              ; Tecla D
+  WORD faz_nada           ; Tecla E
+  WORD faz_nada           ; Tecla F
+
+; Rotina correspondente a cada tecla durante a pausa
+LISTA_ROTINAS_PAUSA:
+  WORD faz_nada           ; Tecla 0
+  WORD faz_nada           ; Tecla 1
+  WORD faz_nada           ; Tecla 2
+  WORD faz_nada           ; Tecla 3
+  WORD faz_nada           ; Tecla 4
+  WORD faz_nada           ; Tecla 5
+  WORD faz_nada           ; Tecla 6
+  WORD faz_nada           ; Tecla 7
+  WORD faz_nada           ; Tecla 8
+  WORD faz_nada           ; Tecla 9
+  WORD faz_nada           ; Tecla A
+  WORD faz_nada           ; Tecla B
+  WORD faz_nada           ; Tecla C
+  WORD continua           ; Tecla D
   WORD faz_nada           ; Tecla E
   WORD faz_nada           ; Tecla F
 
@@ -132,7 +152,26 @@ LISTA_INTERRUP:
   WORD move_sonda
   WORD decrementa_energia
   WORD faz_nada_RFE
+; Lista de rotinas de interrupção
+LISTA_INTERRUP:
+  WORD move_asteroide
+  WORD move_sonda
+  WORD decrementa_energia
+  WORD faz_nada_RFE
 
+; Lista de posições e direções iniciais possíveis para asteróide 
+LISTA_ASTEROIDES_POSSIVEIS:
+  WORD 0, 0, 1, 1
+  WORD 0, METADE_ECRÃ, 1, 1
+  WORD 0, METADE_ECRÃ, 1, -1
+  WORD 0, METADE_ECRÃ, 1, 0
+  WORD 0, LIMITE_DIREITO-LARG_ASTEROIDE, 1, -1
+
+LISTA_ASTEROIDES_BONECOS:
+  WORD ASTEROIDE_BONECO
+  WORD ASTEROIDE_BONECO
+  WORD ASTEROIDE_MINERAVEL_BONECO
+  WORD ASTEROIDE_BONECO
 ; Lista de posições e direções iniciais possíveis para asteróide 
 LISTA_ASTEROIDES_POSSIVEIS:
   WORD 0, 0, 1, 1
@@ -159,10 +198,21 @@ ASTEROIDE_BONECO:
   WORD 0,      0,      0FBBBH, 0F999H, 0
   WORD 0,      0FBBBH, 0F999H, 0F999H, 0
   WORD 0,      0,      0F777H, 0,      0
+  WORD 0,      0,      0,      0,      0
+  WORD 0,      0,      0,      0,      0
+  WORD 0,      0,      0FBBBH, 0F999H, 0
+  WORD 0,      0FBBBH, 0F999H, 0F999H, 0
+  WORD 0,      0,      0F777H, 0,      0
 
 ASTEROIDE_MINERAVEL_BONECO:
   WORD 5    ; Largura boneco
   WORD 5    ;  Altura boneco
+
+  WORD 0,      0,      0FBBBH, 0,      0
+  WORD 0,      0FBBBH, 0FBBBH, 0FBBBH, 0
+  WORD 0F999H, 0F777H, 0FBBBH, 0F999H, 0
+  WORD 0FBBBH, 0FBBBH, 0F999H, 0F999H, 0
+  WORD 0,      0FBBBH, 0F777H, 0,      0
 
   WORD 0,      0,      0FBBBH, 0,      0
   WORD 0,      0FBBBH, 0FBBBH, 0FBBBH, 0
@@ -175,6 +225,22 @@ ASTEROIDE_MINERAVEL_BONECO:
   WORD 0A9DEH, 0A9DEH, 0FBBBH, 0F999H, 0A9DEH
   WORD 0FBBBH, 0FBBBH, 0F999H, 0A9DEH, 0F777H
   WORD 0,      0FBBBH, 0A9DEH, 0F777H, 0
+
+ASTEROIDE_BONECO_DESTRUIDO_0:
+  WORD 5    ; Largura boneco
+  WORD 5    ;  Altura boneco
+
+  WORD 0,      0,      0FBBBH, 0, 0
+  WORD 0,      0FBBBH, 0FBBBH, 0FBBBH, 0
+  WORD 0F999H, 0F777H, 0FBBBH, 0F999H, 0
+  WORD 0FBBBH, 0FBBBH, 0F999H, 0F999H, 0
+  WORD 0,      0FBBBH, 0F777H, 0, 0
+
+  WORD 0,      0F777H, 0FBBBH, 0F999H, 0
+  WORD 0F999H, 0FBBBH, 0FBBBH, 0FBBBH, 0F999H
+  WORD 0F999H, 0F777H, 0FBBBH, 0F999H, 0F777H
+  WORD 0FBBBH, 0FBBBH, 0F999H, 0F999H, 0F777H
+  WORD 0,      0FBBBH, 0F777H, 0F777H, 0
 
 ASTEROIDE_BONECO_DESTRUIDO_0:
   WORD 5    ; Largura boneco
@@ -280,105 +346,6 @@ PAINEL_OBJETO:
     ; *************************************************************************
     ; * Listas de objetos
     ; *************************************************************************
-
-; *****************************************************************************
-; * INTERRUPÇÃO 0
-; * MOVE_ASTEROIDE - Move e desenha os asteroides
-; *****************************************************************************
-move_asteroide:
-  PUSH  R3
-
-  MOV   R3, 0
-  MOV   [atualiza_ecrã],  R3 ; Escreve para LOCK, desbloqueia processo gráfico
-  MOV   [atualiza_asteroides], R3 ; Declara asteroides como desatualizados (0)
-
-  MOV   R3, ASTEROID_0
-  CALL  move_objeto
-
-  MOV   R3, ASTEROID_1
-  CALL  move_objeto
-
-  MOV   R3, ASTEROID_2
-  CALL  move_objeto
-
-  MOV   R3, ASTEROID_3
-  CALL  move_objeto
-
-  POP   R3
-  RFE
-
-; *****************************************************************************
-; * INTERRUPÇÃO 1
-; * MOVE_SONDA - Move as sondas
-; *****************************************************************************
-move_sonda:
-  PUSH R3
-
-  MOV   R3, 0
-  MOV   [atualiza_ecrã],  R3 ; Escreve para LOCK, desbloqueia processo gráfico
-  MOV   [atualiza_sondas], R3 ; Declara sondas como desatualizados (0)
-
-  MOV  R3, SONDA_0
-  CALL move_objeto
-
-  MOV  R3, SONDA_1
-  CALL move_objeto
-
-  MOV  R3, SONDA_2
-  CALL move_objeto
-
-  POP  R3
-  RFE
-
-
-; *****************************************************************************
-; * INTERRUPÇÃO 2
-; * DECREMENTA_ENERGIA - Decrementa a energia em 3% de 3 em 3 segundos
-; *****************************************************************************
-decrementa_energia:
-  PUSH  R1
-
-  MOV   R1, [energia]
-  SUB   R1, 3
-  MOV   [energia],  R1
-  MOV   [atualiza_display],  R1 ; Valor irrelevante
-
-  POP   R1
-  RFE
-
-; *****************************************************************************
-; * MOVE_OBJETO - Apaga, move, e desenha um objeto representado 
-; *   por uma determinada tabela.
-; * Argumentos:
-; *   R3 - Objeto com estado de ativação
-; *****************************************************************************
-move_objeto:
-  PUSH  R0
-  PUSH  R1
-  MOV   R0, [R3-2]  ; Estado ativação objeto
-  CMP   R0, 0      ; Se estado for <= 0 não mover objeto inativo
-  JLE    sair_move_objeto
-  PUSH  R2
-  PUSH  R4
-
-  MOV   R0, [R3]    ; R0 <- Linha inicial do objeto (Word)
-  MOV   R1, [R3+2]  ; R1 <- Coluna inicial do objeto (Word)
-  MOV   R2, [R3+4]  ; Direção de movimento vertical (Word)
-  MOV   R4, [R3+6]  ; Direção de movimento horizontal (Word)
-
-  ADD   R0, R2    ; Adiciona direção vertical (cima, baixo)
-  ADD   R1, R4    ; Adiciona direção horizontal (esquerda, direita)
-
-  MOV   [R3], R0
-  MOV   [R3+2], R1
-
-  POP   R4
-  POP   R2
-sair_move_objeto:
-  POP   R1
-  POP   R0
-  RET
-
 
 ; *****************************************************************************
 ; * Inicializações dos Registos e Stack Pointer
@@ -577,19 +544,69 @@ valor_teclado:
   POP   R1      ; R1 volta a tomar valor anterior
   RET
 
-
 ; *****************************************************************************
 ; * PROCESSO
-; * DISPLAY - Processo que executa o commando correspondente a cada tecla
+; * CONTROL - Processo que executa o commando correspondente a cada tecla
 ; *****************************************************************************
-PROCESS SP_display
-display:
-  MOV   R0, 10  ; Escreve em base 10
-display_ciclo:
-  MOV   R6, [atualiza_display]
-  CALL  escreve_display
-  JMP   display_ciclo
+PROCESS SP_control
+control:
+  MOV   R0, [tecla_premida] ; lê LOCK (bloqueia), espera por tecla 
+  MOV   R1, [LISTA_ROTINAS] ; Seleciona a lista de rotinas adequada
 
+  SHL   R0, 1    ; multiplica por 2, porque uma word é 2 bytes
+  ADD   R1, R0   ; salta para o comando corresponde 
+  MOV   R0, [R1] ; 
+  CALL  R0       ; call lista_rotinas[valor]
+
+  JMP   control
+
+; *****************************************************************************
+; * Rotina que não faz nada para quando tecla não corresponde a nenhuma ação
+; *****************************************************************************
+faz_nada:
+  RET
+
+faz_nada_RFE:
+  RFE
+
+; *****************************************************************************
+; * INCREMENTA_DISPLAY - Incrementa o Display por um valor
+; * Argumentos:
+; *   R0, R1: Valor é consumido
+; *   R4: Endereço do display
+; *   R6: Valor do display
+; *****************************************************************************
+incrementa_display:
+  ADD R6, 1
+  MOV R0, 10  ; Escolhe base 10
+  CALL escreve_display
+  RET
+
+; *****************************************************************************
+; * DECREMENTA_DISPLAY - Decrementa o Display por um valor
+; * Argumentos:
+; *   R0, R1: Valor é consumido
+; *   R4: Endereço do display
+; *   R6: Valor do display
+; *****************************************************************************
+decrementa_display:
+  SUB R6, 1
+  MOV R0, 10
+  CALL escreve_display
+  CMP R6, 3
+  RFE
+; *****************************************************************************
+; * ECRÃ_SEM_ENERGIA - Decrementa o Display em 3 valores
+; * Argumentos:
+; *****************************************************************************
+ecrã_sem_energia:
+  PUSH R1
+  MOV R1, 1
+  MOV R6, 0
+  MOV [DISPLAYS], R6
+  MOV [SEL_CEN_FUNDO], R1
+  POP R1
+  RET
 ; *****************************************************************************
 ; * ESCREVE_DISPLAY - Transforma valor Hex noutra base (de 1 a 16), num limite 
 ; *   de 3 dígitos para base 10 é válido de 0 a 999 (0H a 3E7H) 
