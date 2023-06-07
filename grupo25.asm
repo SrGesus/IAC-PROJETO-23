@@ -24,7 +24,7 @@
   ECRÃ_SONDAS     EQU 2   ; Ecrã onde está representado as sondas
 
   LINHA_SONDA     EQU 27  ; linha inicial da sonda
-  LIMITE_SONDA    EQU 15  ; linha final   da sonda
+  LIMITE_SONDA    EQU 13  ; linha final   da sonda
   COLUNA_SONDA    EQU 32  ; linha inicial da sonda
   SOM_SONDA       EQU 0   ; som do tiro da sonda
 
@@ -141,6 +141,12 @@ LISTA_ASTEROIDES_POSSIVEIS:
   WORD 0, METADE_ECRÃ, 1, 0
   WORD 0, LIMITE_DIREITO-LARG_ASTEROIDE, 1, -1
 
+LISTA_ASTEROIDES_BONECOS:
+  WORD ASTEROIDE_BONECO
+  WORD ASTEROIDE_BONECO
+  WORD ASTEROIDE_MINERAVEL_BONECO
+  WORD ASTEROIDE_BONECO
+
     ; *************************************************************************
     ; * Bonecos
     ; *************************************************************************
@@ -148,21 +154,43 @@ ASTEROIDE_BONECO:
   WORD 5    ; Largura boneco
   WORD 5    ;  Altura boneco
 
-  WORD 0,      0F777H, 0FBBBH, 0F999H, 0
-  WORD 0F999H, 0FBBBH, 0FBBBH, 0FBBBH, 0F999H
-  WORD 0F999H, 0F777H, 0FBBBH, 0F999H, 0F777H
-  WORD 0FBBBH, 0FBBBH, 0F999H, 0F999H, 0F777H
-  WORD 0,      0FBBBH, 0F777H, 0F777H, 0
+  WORD 0,      0,      0,      0,      0
+  WORD 0,      0,      0,      0,      0
+  WORD 0,      0,      0FBBBH, 0F999H, 0
+  WORD 0,      0FBBBH, 0F999H, 0F999H, 0
+  WORD 0,      0,      0F777H, 0,      0
 
 ASTEROIDE_MINERAVEL_BONECO:
   WORD 5    ; Largura boneco
   WORD 5    ;  Altura boneco
+
+  WORD 0,      0,      0FBBBH, 0,      0
+  WORD 0,      0FBBBH, 0FBBBH, 0FBBBH, 0
+  WORD 0F999H, 0F777H, 0FBBBH, 0F999H, 0
+  WORD 0FBBBH, 0FBBBH, 0F999H, 0F999H, 0
+  WORD 0,      0FBBBH, 0F777H, 0,      0
 
   WORD 0,      0A9DEH, 0FBBBH, 0F999H, 0
   WORD 0F999H, 0FBBBH, 0FBBBH, 0A9DEH, 0A9DEH
   WORD 0A9DEH, 0A9DEH, 0FBBBH, 0F999H, 0A9DEH
   WORD 0FBBBH, 0FBBBH, 0F999H, 0A9DEH, 0F777H
   WORD 0,      0FBBBH, 0A9DEH, 0F777H, 0
+
+ASTEROIDE_BONECO_DESTRUIDO_0:
+  WORD 5    ; Largura boneco
+  WORD 5    ;  Altura boneco
+
+  WORD 0,      0,      0FBBBH, 0, 0
+  WORD 0,      0FBBBH, 0FBBBH, 0FBBBH, 0
+  WORD 0F999H, 0F777H, 0FBBBH, 0F999H, 0
+  WORD 0FBBBH, 0FBBBH, 0F999H, 0F999H, 0
+  WORD 0,      0FBBBH, 0F777H, 0, 0
+
+  WORD 0,      0F777H, 0FBBBH, 0F999H, 0
+  WORD 0F999H, 0FBBBH, 0FBBBH, 0FBBBH, 0F999H
+  WORD 0F999H, 0F777H, 0FBBBH, 0F999H, 0F777H
+  WORD 0FBBBH, 0FBBBH, 0F999H, 0F999H, 0F777H
+  WORD 0,      0FBBBH, 0F777H, 0F777H, 0
 
 SONDA_BONECO:
   WORD 1
@@ -179,12 +207,12 @@ PAINEL_BONECO:
   WORD 0A29FH, 0A0BEH, 0A9DEH, 0A0BEH, 0A0BEH , 0A0BEH, 0ABBBH, 0A0BEH, 0A0BEH, 0ABBBH, 0A0BEH, 0A2B4H, 0AD22H, 0A8C4H, 0A29FH
   WORD 0A29FH, 0A0BEH, 0A9DEH, 0A0BEH, 0A9DEH , 0A9DEH, 0A46FH, 0A9DEH, 0A46FH, 0A46FH, 0A46FH, 0A9DEH, 0A9DEH, 0A9DEH, 0A29FH
 
+
     ; *************************************************************************
     ; * Objetos
     ; *************************************************************************
 
-
-  WORD 1    ; Estado de Ativação do Asteroid_0
+  WORD 0    ; Estado de Ativação do Asteroid_0
 ASTEROID_0:
   WORD 0, LIMITE_DIREITO/2-LARG_ASTEROIDE/2             ; Posição: Primeira word é linha, segundo coluna
   WORD 1, 1             ; Direção do movimento
@@ -217,7 +245,7 @@ ASTEROID_3:
 ; **************
 
   WORD COLUNA_SONDA-6 ; Coluna inicial sonda
-  WORD 1  ; Estado de Ativação da Sonda_0
+  WORD 0  ; Estado de Ativação da Sonda_0
 SONDA_0:  ; Sonda diagonal-esquerda
   WORD LINHA_SONDA, COLUNA_SONDA-6  ; Posição: Primeiro word é linha, segundo coluna
   WORD -1, -1                       ; Direção do movimento
@@ -264,7 +292,16 @@ move_asteroide:
   MOV   [atualiza_ecrã],  R3 ; Escreve para LOCK, desbloqueia processo gráfico
   MOV   [atualiza_asteroides], R3 ; Declara asteroides como desatualizados (0)
 
-  MOV   R3, ASTEROID_0  ; R3 <- endereço do asteroide inicial (Temp)
+  MOV   R3, ASTEROID_0
+  CALL  move_objeto
+
+  MOV   R3, ASTEROID_1
+  CALL  move_objeto
+
+  MOV   R3, ASTEROID_2
+  CALL  move_objeto
+
+  MOV   R3, ASTEROID_3
   CALL  move_objeto
 
   POP   R3
@@ -319,9 +356,8 @@ move_objeto:
   PUSH  R0
   PUSH  R1
   MOV   R0, [R3-2]  ; Estado ativação objeto
-  MOV   R1, 0
-  CMP   R0, R1      ; Se estado for 0 não mover objeto inativo
-  JZ    sair_move_objeto
+  CMP   R0, 0      ; Se estado for <= 0 não mover objeto inativo
+  JLE    sair_move_objeto
   PUSH  R2
   PUSH  R4
 
@@ -360,9 +396,12 @@ inicio:
 
   MOV   R4,   DISPLAYS  ; endereço do periférico dos displays
   MOV   R5,   MASCARA   ; para isolar os 4 bits de menor peso, ao ler as colunas do teclado
-  MOV   R6,   0000H     ; reseta o valor do display para 0
+  MOV   R6,   TEC_LIN ; reseta o valor do display para 0
   MOV   [R4], R0      ; Escreve 0 no display
 
+  ; interrupções desativas para objeto não se mover enquanto
+  ; desenha gráficos e verifica colisões 
+  CALL gráficos
 
   EI0
   EI1
@@ -372,16 +411,103 @@ inicio:
 
   CALL teclado
   CALL control
-  CALL gráficos
   CALL display
 
 
+
 ; *****************************************************************************
-; * MAIN - Este processo trata da colisão entre sondas e asteróides
+; * "PROCESSO"
+; * MAIN - Este processo trata da geração de asteróides
 ; *****************************************************************************
+main_setup:
+  MOV   R1, 5
+  MOV   R2, 4
+  MOV   R4, LISTA_ASTEROIDES_POSSIVEIS
+  MOV   R5, LISTA_ASTEROIDES_BONECOS
+  MOV   R6, TEC_LIN
 main:
   MOV   R3, [atualiza_ecrã] ; só verificar colisão quando ecrã for atualizado
-  JMP main
+  
+  MOV   R3, ASTEROID_0
+  CALL  gera_asteroides
+  CMP   R0, 0
+  JZ main
+
+  MOV   R3, ASTEROID_1
+  CALL  gera_asteroides
+  CMP   R0, 0
+  JZ main
+
+  MOV   R3, ASTEROID_2
+  CALL  gera_asteroides
+  CMP   R0, 0
+  JZ main
+
+  MOV   R3, ASTEROID_3
+  CALL  gera_asteroides
+  CMP   R0, 0
+  JZ main
+
+  JMP   main
+
+; *****************************************************************************
+; * GERA_ASTEROIDE - 
+; * Argumentos:
+; *   R1: Tamanho de tabela LISTA_ASTEROIDES_POSSIVEIS
+; *   R2: Tamanho de tabela LISTA_ASTEROIDES_BONECOS
+; *   R3: Objeto Asteróide (Valor é consumido)
+; *   R4: Tabela LISTA_ASTEROIDES_POSSIVEIS
+; *   R5: Tabela LISTA_ASTEROIDES_BONECOS
+; *   R6: Endereço Leitura Teclado.
+; *   R7: Valor é consumido
+; * Retorno:
+; *   R0: é 0 se asteróide foi gerado
+; *****************************************************************************
+gera_asteroides:
+  MOV   R0, [R3-2]  ; Valor de ativação
+  CMP   R0, 0
+  JNZ   sair_gera_asteroides
+
+  CALL numero_aleatório
+  MOD   R0, R1    ; i = random() % length_lista_asteroides_possíveis
+  SHL   R0, 3     ; Cada elemento tem 4 Words (8 Bytes)
+  ADD   R0, R4    ; R0 = &lista_asteróides_possíveis[i]
+
+  MOV   R7,   [R0]  ; linha inicial
+  MOV   [R3],  R7    
+  MOV   R7,   [R0+2]    ; coluna inicial
+  MOV   [R3+2], R7    
+  MOV   R7,   [R0+4]    ; direção linha
+  MOV   [R3+4], R7    
+  MOV   R7,   [R0+6]    ; direção coluna
+  MOV   [R3+6], R7
+
+  CALL numero_aleatório
+  MOD   R0,   R2    ; i = random() % length_lista_asteroides_bonecos
+  SHL   R0,   1     ; Cada elemento tem 1 Words (2 Bytes)
+  ADD   R0,   R5    ; R0 = &lista_asteróides_possíveis[i]
+
+  MOV   R7,   [R0]  ; linha inicial
+  MOV   [R3+8], R7
+
+  MOV   R0, 1
+  MOV   [R3-2], R0  ; Estado de ativação = 1, ativa asteróide
+  MOV   R0, 0
+
+sair_gera_asteroides:
+  RET
+
+; *****************************************************************************
+; * NUMERO_ALEATÓRIO - Gera um número aleatório de 0 a 15.
+; * Argumentos:
+; *   R6: Endereço Leitura Teclado.
+; * Retorno:
+; *   R0: Valor aleatório de 0 a 15
+; *****************************************************************************
+numero_aleatório:
+  MOVB  R0, [R6]  ; Lê input teclado
+  SHR   R0, 4     ; Deita o valor da coluna fora
+  RET
 
 ; *****************************************************************************
 ; * PROCESSO
@@ -390,14 +516,14 @@ main:
 ; *****************************************************************************
 PROCESS SP_teclado
 teclado:
-  MOV   R0, 0         ; Registo da coluna/tecla premida
-  MOV   R1, LINHA     ; Linha toma valor inicial 1111H
-  MOV   R2, TEC_LIN   ; endereço do periférico das  linhas do teclado
-  MOV   R3, TEC_COL   ; endereço do periférico das colunas do teclado
-  MOV   R4, MASCARA   ; para isolar os 4 bits de menor peso, ao ler as colunas do teclado
+  MOV   R0, 0       ; Registo da coluna/tecla premida
+  MOV   R1, LINHA   ; Linha toma valor inicial 1111H
+  MOV   R2, TEC_LIN ; endereço do periférico das  linhas do teclado
+  MOV   R3, TEC_COL ; endereço do periférico das colunas do teclado
+  MOV   R4, 000FH   ; para isolar os 4 bits de menor peso, ao ler as colunas do teclado
 
 espera_tecla: ; Ciclo enquanto a tecla NÃO estiver a ser premida
-  YIELD        ; Adormece quando os outros processos estão bloqueados e não há teclas/interrupções ativas
+  WAIT        ; Adormece quando os outros processos estão bloqueados e não há teclas/interrupções ativas
   ROL   R1,   1       ; Roda o valor da linha (representado pelo least significant nibble)
   MOVB  [R2], R1      ; Escreve no periférico das linhas do teclado
   MOVB  R0,   [R3]    ; lê para R0 a coluna
@@ -405,8 +531,8 @@ espera_tecla: ; Ciclo enquanto a tecla NÃO estiver a ser premida
   CMP   R0,   0       ; nenhuma tecla premida é coluna = 0
   JZ    espera_tecla  ; se nenhuma tecla for premida continuar ciclo
 
-  CALL valor_teclado  ; R0 <- Valor da tecla
-  MOV [tecla_premida], R0 ; Escreve na var LOCK tecla_premida
+  CALL  valor_teclado  ; R0 <- Valor da tecla
+  MOV   [tecla_premida], R0 ; Escreve na var LOCK tecla_premida
 
 ha_tecla: ; Ciclo enquanto a tecla estiver a ser premida
   YIELD   ; Há uma tecla premida então nunca vai adormecer (logo não usar WAIT)
@@ -575,9 +701,6 @@ PROCESS SP_gráficos
 gráficos:
   MOV   R3, [atualiza_ecrã] ; LOCK até ecrã necessitar atualização
 
-  MOV   R3, ASTEROID_0
-  CALL verifica_limites_asteroide
-
 gráficos_painel:
   MOV   R3, [atualiza_painel]
   CMP   R3, 0
@@ -608,19 +731,18 @@ gráficos_sondas:
 verifica_limites_asteroide:
   MOV   R0,   [R3-2]  ; Estado de ativação do asteróide
   CMP   R0,   0
-  JZ    sair_lim_ast  ; Se o estado de Ativação do asteróide for 0 então sair
-  MOV   R0,   [R3]    ; Linha Asteróide
+  JLE    sair_lim_ast  ; Se o estado de Ativação do asteróide for < 0 então sair
+
+  MOV   R0,   [R3]      ; Linha Asteróide
   MOV   R1,   LIMITE_INFERIOR
   CMP   R0,   R1
   JGT   reseta_asteroide  ; reseta Asteróide se estiver abaixo do limite inferior
 
-  ; MOV   R1,   [R3+2]  ; Coluna Asteróide
-  JMP   sair_lim_ast
+  JMP   verifica_colisão_asteroide
 
 reseta_asteroide:
   MOV   R0,     0
-  MOV   [R3],   R0
-  MOV   [R3+2], R0
+  MOV   [R3-2],   R0
 
 sair_lim_ast:
   RET
@@ -671,10 +793,106 @@ desenha_asteroides:
   MOV   [APAGA_ECRÃ], R3              ; Apaga todos os pixéis neste ecrã
 
   MOV   R3, ASTEROID_0
+  CALL verifica_limites_asteroide
+  CALL  desenha_objeto
+
+  MOV   R3, ASTEROID_1
+  CALL verifica_limites_asteroide
+  CALL  desenha_objeto
+
+  MOV   R3, ASTEROID_2
+  CALL verifica_limites_asteroide
+  CALL  desenha_objeto
+
+  MOV   R3, ASTEROID_3
+  CALL  verifica_limites_asteroide
   CALL  desenha_objeto
 
   MOV   [atualiza_asteroides], R3 ; R3 é sempre != de 0, logo marca asteroides como atualizados
   RET
+
+; *****************************************************************************
+; * VERIFICA_COLISÃO_ASTERÓIDE - 
+; * Argumentos: 
+; *   R3: Objeto Asteróide
+; *****************************************************************************
+verifica_colisão_asteroide:
+  MOV   R4, SONDA_0
+  CALL  verifica_colisão
+  MOV   R4, SONDA_1
+  CALL  verifica_colisão
+  MOV   R4, SONDA_2
+  CALL  verifica_colisão
+  RET
+
+; *****************************************************************************
+; * VERIFICA_COLISÃO - verifica se dois objetos estão a colidir
+; * Argumentos:
+; *   R2: Endereço de rotina se houver colisão
+; *   R3: Objeto Asteróide (não queremos alterar)
+; *   R4: Objeto 2 (
+; *****************************************************************************
+verifica_colisão:
+; R0 coord obj 1
+; R1 coord obj 2
+; R2 
+; R3 obj 1
+; R4 obj 2
+; R5 bon 1
+; R6 bon 2
+; R7 tamanho 1
+; R8 tamanho 2
+
+  MOV R0, [R4-2]
+  CMP R0, 0
+  JZ  sair_verifica_colisão ; Se objeto 2 estiver inativo saltar verificação
+
+  MOV R0, [R3+2]  ; Coluna inicial Obj 1 (Esquerda do obj1)
+  MOV R1, [R4+2]  ; Coluna inicial Obj 2
+  MOV R5, [R3+8]  ; Boneco 1
+  MOV R6, [R4+8]  ; Boneco 2
+  MOV R7, [R5]    ; Largura boneco 1
+  MOV R8, [R6]    ; Largura boneco 2
+  ADD R1, R8      ; Coluna obj2 + largura (Direita do obj2)
+
+; Para colisão, Direita obj2 está há dir da esq de obj1
+  CMP R0, R1
+  JGE sair_verifica_colisão
+
+  ADD R0, R7      ; Coluna ob1 + largura (Direita do obj1)
+  SUB R1, R8      ; Coluna obj2 (Esquerda do obj2)
+
+; Para colisão, Esquerda obj2 está há esq da dir de obj1
+  CMP R0, R1
+  JLE sair_verifica_colisão
+
+  MOV R0, [R3]    ; Linha inicial Obj 1 (Cima do obj1)
+  MOV R1, [R4]    ; Linha inicial Obj 2 (Cima do obj2)
+  MOV R7, [R5+2]  ; Altura boneco 1
+  MOV R8, [R6+2]  ; Altura boneco 2
+
+  ADD R1, R8      ; Linha obj2 + altura (Baixo obj2)
+
+; Para colisão, Baixo obj2 está a baixo cima obj1
+  CMP R0, R1
+  JGE sair_verifica_colisão
+
+  SUB R1, R8      ; Linha obj2 (Cima do obj2)
+  ADD R0, R7      ; Linha obj1 + altura (Baixo obj1)
+
+; Para colisão, cima obj2 está há cima de baixo de obj1
+  CMP R0, R1
+  JLE sair_verifica_colisão
+
+; Há colisão
+  MOV R0, -2
+  MOV R1,  0
+  MOV [R3-2], R0
+  MOV [R4-2], R1
+
+sair_verifica_colisão:
+  RET
+
 
 ; *****************************************************************************
 ; * DESENHA_SONDAS - desenha todas as sondas no ecrã 2
@@ -683,7 +901,6 @@ desenha_sondas:
   MOV   R3,           ECRÃ_SONDAS
   MOV   [SEL_ECRÃ],   R3          ; Seleciona ecrã 2
   MOV   [APAGA_ECRÃ], R3          ; Apaga todos os pixéis neste ecrã
-
 
   MOV   R3, SONDA_0
   CALL  verifica_limites_sonda
@@ -710,8 +927,7 @@ desenha_sondas:
 desenha_objeto:
 
   MOV   R0, [R3-2]  ; Estado ativação objeto
-  MOV   R1, 0
-  CMP   R0, R1      ; Se estado for 0 não mover objeto
+  CMP   R0, 0      ; Se estado for 0 não mover objeto
   JZ    sair_desenha_objeto
 
   MOV   R0, [R3]    ; R0 <- Linha inicial do objeto (Word)
