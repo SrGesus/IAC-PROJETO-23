@@ -395,7 +395,7 @@ main_setup:
   MOV   R2, 4 ; Tamanho de tabela LISTA_ASTEROIDES_BONECOS
   MOV   R4, LISTA_ASTEROIDES_POSSIVEIS
   MOV   R5, LISTA_ASTEROIDES_BONECOS
-  MOV   R6, TEC_LIN ; 
+  MOV   R6, TEC_LIN ; Leitura teclado para gerar nºs aleatórios
 main:
   ; só verificar uma colisão a cada duas atualizações de ecrã
   ; para diminui sobreposições
@@ -404,23 +404,17 @@ main:
   MOV   R3, [atualiza_ecrã]
   MOV   R3, [atualiza_ecrã]
 
-  MOV   R3, ASTEROID_0
-  CALL  gera_asteroide
-  JZ main
+  MOV   R10, LISTA_ASTEROIDES
+ciclo_gera_asteroides:
+  MOV   R3, [R10]  ; Objeto asteróide
+  CMP   R3, NULL
+  JZ    main
 
-  MOV   R3, ASTEROID_1
   CALL  gera_asteroide
-  JZ main
+  JZ    main
 
-  MOV   R3, ASTEROID_2
-  CALL  gera_asteroide
-  JZ main
-
-  MOV   R3, ASTEROID_3
-  CALL  gera_asteroide
-  JZ main
-
-  JMP   main
+  ADD   R10, 2  ; Cada elemento é uma Word (2 bytes)
+  JMP ciclo_gera_asteroides
 
 ; *****************************************************************************
 ; * GERA_ASTEROIDE - Gera um asteróide com um posição e direção aleatória
@@ -502,6 +496,7 @@ teclado:
   MOV   R3, TEC_COL   ; endereço do periférico das colunas do teclado
   MOV   R4, MASCARA   ; para isolar os 4 bits de menor peso, ao ler as colunas do teclado
   MOV   R5, SOM_BOTAO ; Som clicar botão
+
 espera_tecla: ; Ciclo enquanto a tecla NÃO estiver a ser premida
   WAIT        ; Adormece quando os outros processos estão bloqueados e não há teclas/interrupções ativas
   ROL   R1,   1       ; Roda o valor da linha (representado pelo least significant nibble)
@@ -530,31 +525,30 @@ ha_tecla: ; Ciclo enquanto a tecla estiver a ser premida
 ; * Argumentos:
 ; *   R0: Valor da coluna (Valor é consumido)
 ; *   R1: Valor da linha
-; *   R5: Valor é consumido
+; *   R4: Máscara 000FH
+; *   R6: Valor é consumido
 ; * Retorno:
 ; *   R0: Valor da tecla premida (0H a FH)
 ; *****************************************************************************
 valor_teclado:
   PUSH  R1      ; guarda o valor do R1
-  PUSH  R2      ; guarda o valor do R2
 
   AND   R1, R4  ; descarta todos bits exceto 0-3
 
   ; Converter o nibble linha 1-2-4-8 para 0-1-2-3
   SHR   R1, 1
-  MOV   R5, R1
-  SHR   R5, 2
-  SUB   R1, R5
+  MOV   R6, R1
+  SHR   R6, 2
+  SUB   R1, R6
   ; mesmo processo para coluna
   SHR   R0, 1
-  MOV   R5, R0
-  SHR   R5, 2
-  SUB   R0, R5
+  MOV   R6, R0
+  SHR   R6, 2
+  SUB   R0, R6
 
   SHL   R1, 2   ; Multiplica linha por 4
   ADD   R0, R1  ; 4*linha + coluna = valor
 
-  POP   R2      ; R2 volta a tomar valor anterior
   POP   R1      ; R1 volta a tomar valor anterior
   RET
 
@@ -569,12 +563,13 @@ display_ciclo:
   MOV   R6, [valor_display] ; LOCK bloqueia até valor ser atualizado
   CALL  escreve_display
 
+  ; Se energia <= 0 salta para nave_sem_energia
   CMP   R6, 0
-  JLE   nave_sem_energia
+  JLE   nave_sem_energia  
 
   JMP   display_ciclo
 
-; Se Energia <= 0
+; Se energia <= 0
 nave_sem_energia:
   MOV R6, 0
   MOV R1, FUNDO_GAMEOVER_ENERGIA
@@ -600,32 +595,28 @@ nave_sem_energia:
 ; *   e representa-o no display.
 ; * Argumentos:
 ; *   R0: Base (Denominador das divisões)
-; *   R1: Valor é consumido
+; *   R1, R2, R3: Valor é consumido
 ; *   R6: Valor do display
 ; *****************************************************************************
 escreve_display:
-  PUSH R6
-  PUSH R2
-
-converte_decimal: ; converte o número no display num número decimal
+; converte o número no display num número decimal
   MOV   R1,   R6
+  MOV   R3,   R6
 
   MOD   R1,   R0  ; unidades em base 10 no nibble low
-  DIV   R6,   R0  ; Remove unidades
+  DIV   R3,   R0  ; Remove unidades
 
-  MOV   R2,   R6  ; R2 <- Valor sem unidades
+  MOV   R2,   R3  ; R2 <- Valor sem unidades
   MOD   R2,   R0  ; dezenas em base 10 no nibble low
-  DIV   R6,   R0  ; Remove dezenas
+  DIV   R3,   R0  ; Remove dezenas
   
-  SHL   R6,   4   ; R6 0000
-  OR    R6,   R2  ; R6 R2 
-  SHL   R6,   4   ; R6 R2 0000
-  OR    R6,   R1  ; R6 R2 R1
+  SHL   R3,   4   ; R3 0000
+  OR    R3,   R2  ; R3 R2 
+  SHL   R3,   4   ; R3 R2 0000
+  OR    R3,   R1  ; R3 R2 R1
 
-  MOV   [DISPLAYS], R6  ; escreve valor decimal no display
+  MOV   [DISPLAYS], R3  ; escreve valor decimal no display
 
-  POP R2
-  POP R6
   RET
 
 ; *****************************************************************************
@@ -777,8 +768,12 @@ atira_sonda:
 
   decrementa_energia_5:
   DI2 ; Desativar interrupção da energia para evitar race condition
+  
+  ; Energia + 3%
   MOV R0, [energia]
   SUB R0, 5
+
+  ; Escreve no display
   MOV [energia], R0
   MOV [valor_display], R0
   EI2
@@ -877,7 +872,7 @@ ciclo_desenha_asteroides:
   JZ    termina_colisao
   CALL  desenha_objeto
   
-  ADD   R10, 2
+  ADD   R10, 2  ; Cada elemento é uma Word (2 bytes)
   JMP   ciclo_desenha_asteroides
 
 sair_desenha_asteroides:
@@ -1009,6 +1004,21 @@ destroi_asteróide:
 sair_destroi_asteróide:
   RET
 
+asteroide_minerável:
+; Incremente a energia em 25%
+  MOV R4 , [energia]
+  MOV R1, 25
+  ADD R4, R1
+
+  ; Escreve no display
+  MOV [energia], R4
+  MOV [valor_display], R4
+
+; Efeito asteróide minerável
+  MOV   R0, SOM_ASTEROIDE_MINERAVEL ; som do asteróide não minerável
+  MOV   [TOCA_SOM], R0    ; reproduz o som
+
+  RET
 ; *****************************************************************************
 ; * VERIFICA_COLISÃO - verifica se dois objetos estão a colidir
 ; * Argumentos:
@@ -1019,7 +1029,6 @@ sair_destroi_asteróide:
 ; *   R9: é 0 se houve colisão
 ; *****************************************************************************
 verifica_colisão:
-
   MOV R0, [R4-2]
   MOV R9, 1
   CMP R0, 0
@@ -1067,22 +1076,6 @@ verifica_colisão:
 
 sair_verifica_colisão:
   CMP R9, 0
-  RET
-
-
-asteroide_minerável:
-; Incremente a energia em 25%
-  MOV R4 , [energia]
-  MOV R1, 25
-  ADD R4, R1
-
-  MOV [energia], R4
-  MOV [valor_display], R4
-
-; Efeito asteróide minerável
-  MOV   R0, SOM_ASTEROIDE_MINERAVEL ; som do asteróide não minerável
-  MOV   [TOCA_SOM], R0    ; reproduz o som
-
   RET
 
 ; *****************************************************************************
@@ -1197,11 +1190,9 @@ escreve_pixel:
   MOV   [DEFINE_PIXEL],   R2		; altera a cor do pixel na linha e coluna já selecionadas
   RET
 
-
 ; *****************************************************************************
 ; * Interrupções
 ; *****************************************************************************
-
 ; *****************************************************************************
 ; * INTERRUPÇÃO 0
 ; * MOVE_ASTEROIDE - Move e desenha os asteroides
@@ -1273,8 +1264,11 @@ decrementa_energia:
   CMP   R3, 0
   JZ    sair_decrementa_energia
 
+  ; Energia + 3%
   MOV   R3, [energia]
   SUB   R3, 3
+  
+  ; Escreve no display
   MOV   [energia],  R3
   MOV   [valor_display],  R3 ; Valor irrelevante
 
@@ -1323,7 +1317,7 @@ sair_muda_luzes:
 ; * MOVE_OBJETO - Apaga, move, e desenha um objeto representado 
 ; *   por uma determinada tabela.
 ; * Argumentos:
-; *   R3 - Objeto com estado de ativação
+; *   R3: Objeto
 ; *****************************************************************************
 move_objeto:
   PUSH  R0
