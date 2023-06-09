@@ -23,8 +23,8 @@
 
   ; Sons
   SOM_SONDA               EQU 0
-  SOM_ASTEROIDE           EQU 1
-  SOM_ASTEROIDE_MINERAVEL EQU 2
+  SOM_ASTERÓIDE           EQU 1
+  SOM_ASTERÓIDE_MINERAVEL EQU 2
   SOM_GAMEOVER_ENERGIA    EQU 3
   SOM_GAMEOVER_COLISAO    EQU 4
   SOM_BOTAO               EQU 5
@@ -63,7 +63,7 @@
 
   ; Ecrãs
   ECRÃ_PAINEL             EQU 0   ; Ecrã onde está representado o painel
-  ECRÃ_ASTEROIDES         EQU 1   ; Ecrã onde está representado os asteroides
+  ECRÃ_ASTERÓIDES         EQU 1   ; Ecrã onde está representado os asteróides
   ECRÃ_SONDAS             EQU 2   ; Ecrã onde está representado as sondas
 
   ; Sonda
@@ -72,9 +72,9 @@
   COLUNA_SONDA            EQU 32  ; linha inicial da sonda
 
   ; Asteróide
-  LARG_ASTEROIDE          EQU 5   ; largura de um asteróide
-  ALTU_ASTEROIDE          EQU 5   ; altura de um asteróide
-  METADE_ECRÃ             EQU LIMITE_DIREITO/2-LARG_ASTEROIDE/2
+  LARG_ASTERÓIDE          EQU 5   ; largura de um asteróide
+  ALTU_ASTERÓIDE          EQU 5   ; altura de um asteróide
+  METADE_ECRÃ             EQU LIMITE_DIREITO/2-LARG_ASTERÓIDE/2
 
   ENERGIA_INICIAL         EQU 100
 
@@ -91,7 +91,7 @@ SP_inicial:
 SP_teclado:
 
   STACK 100H  ; Stack do processo de executar comandos
-SP_gera_asteroides:
+SP_gera_asteróides:
 
   STACK 100H  ; Stack do processo que desenha o ecrã
 SP_gráficos:
@@ -127,8 +127,8 @@ atualiza_luzes:
 atualiza_sondas:
   WORD  0 ; Valor == 0 causa as sondas a ser redesenhadas
 
-atualiza_asteroides:
-  WORD  0 ; Valor == 0 causa os asteroides a ser redesenhados
+atualiza_asteróides:
+  WORD  0 ; Valor == 0 causa os asteróides a ser redesenhados
 
     ; *************************************************************************
     ; * Listas
@@ -162,32 +162,32 @@ MAPA_ROTINAS_TERMINADO:
   
 ; Lista de rotinas de interrupção
 LISTA_INTERRUP:
-  WORD move_asteroide
+  WORD move_asteróide
   WORD move_sonda
   WORD decrementa_energia
   WORD muda_luzes
 
 ; Lista de posições e direções iniciais possíveis para gerar asteróide 
 ; 20% para cada
-LISTA_ASTEROIDES_POSSIVEIS:
+LISTA_ASTERÓIDES_POSSIVEIS:
   WORD 0, 0, 1, 1
   WORD 0, METADE_ECRÃ, 1, 1
   WORD 0, METADE_ECRÃ, 1, -1
   WORD 0, METADE_ECRÃ, 1, 0
-  WORD 0, LIMITE_DIREITO-LARG_ASTEROIDE, 1, -1
+  WORD 0, LIMITE_DIREITO-LARG_ASTERÓIDE, 1, -1
 
 ; Lista de bonecos para gerar asteróide minerável ou não
 ; 25% chance se ser minerável e 75% de não ser 
-LISTA_ASTEROIDES_BONECOS:
-  WORD ASTEROIDE_BONECO
-  WORD ASTEROIDE_BONECO
-  WORD ASTEROIDE_MINERAVEL_BONECO
-  WORD ASTEROIDE_BONECO
+LISTA_ASTERÓIDES_BONECOS:
+  WORD ASTERÓIDE_BONECO
+  WORD ASTERÓIDE_BONECO
+  WORD ASTERÓIDE_MINERAVEL_BONECO
+  WORD ASTERÓIDE_BONECO
 
     ; *************************************************************************
     ; * Bonecos
     ; *************************************************************************
-ASTEROIDE_BONECO:
+ASTERÓIDE_BONECO:
   WORD 5    ; Largura boneco
   WORD 5    ;  Altura boneco
 
@@ -197,7 +197,7 @@ ASTEROIDE_BONECO:
   WORD 0FBBBH, 0FBBBH, 0F999H, 0F999H, 0F777H
   WORD 0,      0FBBBH, 0F777H, 0F777H, 0
 
-ASTEROIDE_MINERAVEL_BONECO:
+ASTERÓIDE_MINERAVEL_BONECO:
   WORD 5    ; Largura boneco
   WORD 5    ;  Altura boneco
 
@@ -207,7 +207,7 @@ ASTEROIDE_MINERAVEL_BONECO:
   WORD 0FBBBH, 0FBBBH, 0F999H, 0A9DEH, 0F777H
   WORD 0,      0FBBBH, 0A9DEH, 0F777H, 0
 
-ASTEROIDE_BONECO_DESTRUIDO_0:
+ASTERÓIDE_BONECO_DESTRUIDO_0:
   WORD 5    ; Largura boneco
   WORD 5    ;  Altura boneco
 
@@ -217,7 +217,7 @@ ASTEROIDE_BONECO_DESTRUIDO_0:
   WORD 0FBBBH, 0FBBBH, 0F999H, 0,      0
   WORD 0,      0FBBBH, 0,      0,      0
 
-ASTEROIDE_BONECO_DESTRUIDO_1:
+ASTERÓIDE_BONECO_DESTRUIDO_1:
   WORD 5    ; Largura boneco
   WORD 5    ;  Altura boneco
 
@@ -277,35 +277,35 @@ LISTA_PAINEL_LUZ:
     ; * Objetos
     ; *************************************************************************
 
-  WORD 0    ; Estado de Ativação do Asteroid_0
+  WORD 0    ; Estado de Ativação do ASTEROID_0
 ASTEROID_0:
-  WORD 0, LIMITE_DIREITO/2-LARG_ASTEROIDE/2             ; Posição: Primeira word é linha, segundo coluna
+  WORD 0, LIMITE_DIREITO/2-LARG_ASTERÓIDE/2             ; Posição: Primeira word é linha, segundo coluna
   WORD 1, 1             ; Direção do movimento
-  WORD ASTEROIDE_BONECO ; Boneco
+  WORD ASTERÓIDE_BONECO ; Boneco
 
 ; **************
 
-  WORD 0    ; Estado de Ativação do Asteroid_1
+  WORD 0    ; Estado de Ativação do ASTEROID_1
 ASTEROID_1:
   WORD 0, 0             ; Posição: Primeira word é linha, segundo coluna
   WORD 1, 1             ; Direção do movimento
-  WORD ASTEROIDE_BONECO ; Boneco
+  WORD ASTERÓIDE_BONECO ; Boneco
 
 ; **************
 
-  WORD 0    ; Estado de Ativação do Asteroid_2
+  WORD 0    ; Estado de Ativação do ASTEROID_2
 ASTEROID_2:
   WORD 0, 0             ; Posição: Primeira word é linha, segundo coluna
   WORD 1, 1             ; Direção do movimento
-  WORD ASTEROIDE_BONECO ; Boneco
+  WORD ASTERÓIDE_BONECO ; Boneco
 
 ; **************
 
-  WORD 0  ; Estado de Ativação do Asteroid_3
+  WORD 0  ; Estado de Ativação do ASTEROID_3
 ASTEROID_3:
   WORD 0, 0             ; Posição: Primeira word é linha, segundo coluna
   WORD 1, 1             ; Direção do movimento
-  WORD ASTEROIDE_BONECO ; Boneco
+  WORD ASTERÓIDE_BONECO ; Boneco
 
 ; **************
 
@@ -350,7 +350,7 @@ LUZES_OBJETO:
     ; *************************************************************************
     ; * Listas de objetos
     ; *************************************************************************
-LISTA_ASTEROIDES:
+LISTA_ASTERÓIDES:
   WORD ASTEROID_0, ASTEROID_1, ASTEROID_2, ASTEROID_3, NULL
 
 ; *****************************************************************************
@@ -383,7 +383,7 @@ inicio:
   EI
 
   CALL teclado
-  CALL gera_asteroides_setup
+  CALL gera_asteróides_setup
   CALL display
 
 ; *****************************************************************************
@@ -571,7 +571,7 @@ teclado:
 
 espera_tecla: ; Ciclo enquanto a tecla NÃO estiver a ser premida
   WAIT        ; Adormece quando os outros processos estão bloqueados e não há teclas/interrupções ativas
-  ROL   R1,   1       ; Roda o valor da linha (representado pelo least significant nibble)
+  ROL   R1,   1       ; Passa para a próxima linha (representado pelo least significant nibble)
   MOVB  [R2], R1      ; Escreve no periférico das linhas do teclado
   MOVB  R0,   [R3]    ; lê para R0 a coluna
   AND   R0,   R4      ; descarta todos bits exceto 0-3
@@ -693,58 +693,59 @@ escreve_display:
 
 ; *****************************************************************************
 ; * PROCESSO
-; * GERA_ASTERÓIDES - Processo que executa o commando correspondente a cada tecla
+; * GERA_ASTERÓIDES - Processo que executa o commando correspondente 
+; *   a cada tecla
 ; *****************************************************************************
-PROCESS SP_gera_asteroides
-gera_asteroides_setup:
-  MOV   R1, 5 ; Tamanho de tabela LISTA_ASTEROIDES_POSSIVEIS
-  MOV   R2, 4 ; Tamanho de tabela LISTA_ASTEROIDES_BONECOS
-  MOV   R4, LISTA_ASTEROIDES_POSSIVEIS
-  MOV   R5, LISTA_ASTEROIDES_BONECOS
-  MOV   R6, TEC_LIN ; Leitura teclado para gerar nºs aleatórios
+PROCESS SP_gera_asteróides
+gera_asteróides_setup:
+  MOV   R1, 5 ; Tamanho de tabela LISTA_ASTERÓIDES_POSSIVEIS
+  MOV   R2, 4 ; Tamanho de tabela LISTA_ASTERÓIDES_BONECOS
+  MOV   R4, LISTA_ASTERÓIDES_POSSIVEIS
+  MOV   R5, LISTA_ASTERÓIDES_BONECOS
+  MOV   R6, TEC_COL ; Leitura teclado para gerar nºs aleatórios
 
-ciclo_gera_asteroides:
-  ; só verificar uma colisão a cada duas atualizações de ecrã
-  ; para diminui sobreposições
+ciclo_gera_asteróides:
+  ; só verificar uma colisão a cada 4 atualizações de ecrã
+  ; para diminui sobreposições de asteróides
   MOV   R3, [atualiza_ecrã]
   MOV   R3, [atualiza_ecrã]
   MOV   R3, [atualiza_ecrã]
   MOV   R3, [atualiza_ecrã]
 
-  MOV   R10, LISTA_ASTEROIDES
-ciclo_lista_asteroides:
+  MOV   R10, LISTA_ASTERÓIDES
+ciclo_lista_asteróides:
   MOV   R3, [R10]  ; Objeto asteróide
   CMP   R3, NULL
-  JZ    ciclo_gera_asteroides
+  JZ    ciclo_gera_asteróides
 
-  CALL  gera_asteroide
-  JZ    ciclo_gera_asteroides ; Apenas um asteróide por iteração
+  CALL  gera_asteróide
+  JZ    ciclo_gera_asteróides ; Apenas um asteróide por iteração
 
   ADD   R10, 2  ; Cada elemento é uma Word (2 bytes)
-  JMP ciclo_lista_asteroides
+  JMP ciclo_lista_asteróides
 
 ; *****************************************************************************
-; * GERA_ASTEROIDE - Gera um asteróide com um posição e direção aleatória
+; * GERA_ASTERÓIDE - Gera um asteróide com um posição e direção aleatória
 ; * Argumentos:
-; *   R1: Tamanho de tabela LISTA_ASTEROIDES_POSSIVEIS
-; *   R2: Tamanho de tabela LISTA_ASTEROIDES_BONECOS
+; *   R1: Tamanho de tabela LISTA_ASTERÓIDES_POSSIVEIS
+; *   R2: Tamanho de tabela LISTA_ASTERÓIDES_BONECOS
 ; *   R3: Objeto Asteróide (Valor é consumido)
-; *   R4: Tabela LISTA_ASTEROIDES_POSSIVEIS
-; *   R5: Tabela LISTA_ASTEROIDES_BONECOS
+; *   R4: Tabela LISTA_ASTERÓIDES_POSSIVEIS
+; *   R5: Tabela LISTA_ASTERÓIDES_BONECOS
 ; *   R6: Endereço Leitura Teclado.
 ; *   R0, R7: Valor é consumido
 ; * Retorno:
 ; *   R0: é 0 se asteróide foi gerado
 ; *   Flags: Resultado de CMP R0, 0
 ; *****************************************************************************
-gera_asteroide:
+gera_asteróide:
   MOV   R0, [R3-2]  ; Valor de ativação
   CMP   R0, 0
-  JNZ   sair_gera_asteroide ; Se não for 0 não gerar
+  JNZ   sair_gera_asteróide ; Se não for 0 não gerar
 
   ; Gera posição e direção aleatória
   CALL numero_aleatório
-  MOD   R0, R1    ; i = random() % length_lista_asteroides_possíveis
+  MOD   R0, R1    ; i = random() % length_lista_asteróides_possíveis
   SHL   R0, 3     ; Cada elemento tem 4 Words (8 Bytes)
   ADD   R0, R4    ; R0 = &lista_asteróides_possíveis[i]
 
@@ -760,7 +761,7 @@ gera_asteroide:
 
   ; Gera tipo aleatório (minerável ou não)
   CALL numero_aleatório
-  MOD   R0,   R2    ; i = random() % length_lista_asteroides_bonecos
+  MOD   R0,   R2    ; i = random() % length_lista_asteróides_bonecos
   SHL   R0,   1     ; Cada elemento tem 1 Words (2 Bytes)
   ADD   R0,   R5    ; R0 = &lista_asteróides_possíveis[i]
 
@@ -774,7 +775,7 @@ gera_asteroide:
 
   ; Valor de Retorno (0 se Asteróide foi gerado)
   MOV   R0, 0
-sair_gera_asteroide:
+sair_gera_asteróide:
   CMP   R0, 0
   RET
 
@@ -793,7 +794,7 @@ numero_aleatório:
 ; *****************************************************************************
 ; * PROCESSO
 ; * GRÁFICOS - trata de colisões, desenha o painel da nave, as sondas, e os
-; * asteroides nas suas posições iniciais. Interrupções desativadas no processo.
+; * asteróides nas suas posições iniciais. Interrupções desativadas no processo.
 ; *****************************************************************************
 PROCESS SP_gráficos
 gráficos:
@@ -809,14 +810,14 @@ gráficos_painel:
 gráficos_luzes:
   MOV   R3, [atualiza_luzes]
   CMP   R3, 0
-  JNZ   gráficos_asteroides ; if(atualiza_luzes == 0) desenha_luzes();
+  JNZ   gráficos_asteróides ; if(atualiza_luzes == 0) desenha_luzes();
   CALL  desenha_luzes
 
-gráficos_asteroides:
-  MOV   R3, [atualiza_asteroides]
+gráficos_asteróides:
+  MOV   R3, [atualiza_asteróides]
   CMP   R3, 0
-  JNZ   gráficos_sondas     ; if(atualiza_asteroides == 0) desenha_asteroides();
-  CALL  desenha_asteroides
+  JNZ   gráficos_sondas     ; if(atualiza_asteróides == 0) desenha_asteróides();
+  CALL  desenha_asteróides
 
 gráficos_sondas:
   MOV   R3, [atualiza_sondas]
@@ -854,31 +855,31 @@ desenha_luzes:
   RET
 
 ; *****************************************************************************
-; * DESENHA_ASTEROIDES - desenha todos os asteroides no ecrã 1
+; * DESENHA_ASTERÓIDES - desenha todos os asteróides no ecrã 1
 ; *****************************************************************************
-desenha_asteroides:
-  MOV   R3,           ECRÃ_ASTEROIDES 
+desenha_asteróides:
+  MOV   R3,           ECRÃ_ASTERÓIDES 
   MOV   [SEL_ECRÃ],   R3              ; Seleciona ecrã 1
   MOV   [APAGA_ECRÃ], R3              ; Apaga todos os pixéis neste ecrã
 
   MOV   R3, 1
-  MOV   [atualiza_asteroides], R3 ; R3 é sempre != de 0, logo marca asteroides como atualizados
+  MOV   [atualiza_asteróides], R3 ; R3 é sempre != de 0, logo marca asteróides como atualizados
 
-  MOV   R10, LISTA_ASTEROIDES
-ciclo_desenha_asteroides:
+  MOV   R10, LISTA_ASTERÓIDES
+ciclo_desenha_asteróides:
   MOV   R3, [R10]  ; Objeto asteróide
   CMP   R3, NULL
-  JZ    sair_desenha_asteroides ; Se lista chegar ao fim, sair
+  JZ    sair_desenha_asteróides ; Se lista chegar ao fim, sair
 
-  CALL  verifica_limites_asteroide
-  CALL  verifica_colisão_asteroide
+  CALL  verifica_limites_asteróide
+  CALL  verifica_colisão_asteróide
   JZ    termina_colisao
   CALL  desenha_objeto
   
   ADD   R10, 2  ; Cada elemento é uma Word (2 bytes)
-  JMP   ciclo_desenha_asteroides
+  JMP   ciclo_desenha_asteróides
 
-sair_desenha_asteroides:
+sair_desenha_asteróides:
   RET
 
 ; Se houver uma colisão Asteróide-painel acabar jogo
@@ -904,13 +905,13 @@ termina_colisao:
   RET
 
 ; *****************************************************************************
-; * VERIFICA_LIMITES_ASTEROIDE - verifica se um dado asteróide 
+; * VERIFICA_LIMITES_ASTERÓIDE - verifica se um dado asteróide 
 ; *   está dentro do ecrã.
 ; * Argumentos:
 ; *   R0: Valor é consumido
 ; *   R3: Objeto Asteróide
 ; *****************************************************************************
-verifica_limites_asteroide:
+verifica_limites_asteróide:
   MOV   R0,     [R3-2]  ; Estado de ativação do asteróide
   CMP   R0,     0
   JLE    sair_lim_ast  ; Se o estado de Ativação do asteróide for < 0 então sair
@@ -918,7 +919,7 @@ verifica_limites_asteroide:
   MOV   R0,     [R3]      ; Linha Asteróide
   MOV   R1,     LIMITE_INFERIOR
   CMP   R0,     R1
-  JGT   reseta_asteroide  ; reseta Asteróide se estiver abaixo do limite inferior
+  JGT   reseta_asteróide  ; reseta Asteróide se estiver abaixo do limite inferior
 
   RET
 
@@ -927,13 +928,13 @@ sair_lim_ast: ; Estado ativação <= 0
   CMP   R0,     -2
   JZ  animação_asteróide  ; Se estado de ativação é -2
 
-reseta_asteroide: ; Estado ativação > -2 e <= 0
+reseta_asteróide: ; Estado ativação > -2 e <= 0
   MOV   R0,     0
   MOV   [R3-2], R0  ; Estado de ativação asteróide passa a 0
   RET
 
 animação_asteróide: ; Estado ativação = -2, passar próximo frame
-  MOV   R0, ASTEROIDE_BONECO_DESTRUIDO_1
+  MOV   R0, ASTERÓIDE_BONECO_DESTRUIDO_1
   MOV   [R3+8], R0
   MOV   R0,     -1
   MOV   [R3-2], R0
@@ -947,10 +948,10 @@ animação_asteróide: ; Estado ativação = -2, passar próximo frame
 ; * Retorno:
 ; *   R9: Se for 0 houve colisão asteróide-painel
 ; *****************************************************************************
-verifica_colisão_asteroide:
-  MOV   R1, [R3-2] ; Estado ativação asteroide
+verifica_colisão_asteróide:
+  MOV   R1, [R3-2] ; Estado ativação asteróide
   CMP   R1, 0
-  JLE    sair_verifica_colisão_asteroide ; Saltar se asteróide for inativo
+  JLE    sair_verifica_colisão_asteróide ; Saltar se asteróide for inativo
 
   MOV   R4, SONDA_0
   CALL  verifica_colisão
@@ -973,7 +974,7 @@ ver_painel:
   MOV   R4, PAINEL_OBJETO
   CALL  verifica_colisão
 
-sair_verifica_colisão_asteroide:
+sair_verifica_colisão_asteróide:
   CMP   R9, 0
   RET
 
@@ -993,21 +994,21 @@ destroi_asteróide:
   MOV R1,  0
   MOV [R3-2], R0
   MOV [R4-2], R1
-  MOV R0, ASTEROIDE_BONECO_DESTRUIDO_0
+  MOV R0, ASTERÓIDE_BONECO_DESTRUIDO_0
   MOV [R3+8], R0
 
-  MOV R1, ASTEROIDE_MINERAVEL_BONECO
+  MOV R1, ASTERÓIDE_MINERAVEL_BONECO
   CMP R1, R5  ; Verifica se o asteróide é minerável
-  JZ asteroide_minerável
+  JZ asteróide_minerável
   
 ; Asteróide não minerável
-  MOV   R0, SOM_ASTEROIDE ; som do asteróide não minerável
+  MOV   R0, SOM_ASTERÓIDE ; som do asteróide não minerável
   MOV   [TOCA_SOM], R0    ; reproduz o som
 
 sair_destroi_asteróide:
   RET
 
-asteroide_minerável:
+asteróide_minerável:
 ; Incremente a energia em 25%
   MOV R4 , [energia]
   MOV R1, 25
@@ -1018,7 +1019,7 @@ asteroide_minerável:
   MOV [valor_display], R4
 
 ; Efeito asteróide minerável
-  MOV   R0, SOM_ASTEROIDE_MINERAVEL ; som do asteróide não minerável
+  MOV   R0, SOM_ASTERÓIDE_MINERAVEL ; som do asteróide não minerável
   MOV   [TOCA_SOM], R0    ; reproduz o som
 
   RET
@@ -1140,7 +1141,7 @@ desenha_objeto:
 
   MOV   R0, [R3]    ; R0 <- Linha inicial do objeto (Word)
   MOV   R1, [R3+2]  ; R1 <- Coluna inicial do objeto (Word)
-  MOV   R4, [R3+8]  ; R4 <- endereço do boneco do asteroide (Word)
+  MOV   R4, [R3+8]  ; R4 <- endereço do boneco do asteróide (Word)
   CALL  desenha_boneco
 
 sair_desenha_objeto:
@@ -1198,18 +1199,18 @@ escreve_pixel:
 ; *****************************************************************************
 ; *****************************************************************************
 ; * INTERRUPÇÃO 0
-; * MOVE_ASTEROIDE - Move e desenha os asteroides
+; * MOVE_ASTERÓIDE - Move e desenha os asteróides
 ; *****************************************************************************
-move_asteroide:
+move_asteróide:
   PUSH  R3
 
   MOV   R3, [estado_jogo]
   CMP   R3, 0
-  JZ    sair_move_asteroide
+  JZ    sair_move_asteróide
 
   MOV   R3, 0
   MOV   [atualiza_ecrã],  R3 ; Escreve para LOCK, desbloqueia processo gráfico
-  MOV   [atualiza_asteroides], R3 ; Declara asteroides como desatualizados (0)
+  MOV   [atualiza_asteróides], R3 ; Declara asteróides como desatualizados (0)
 
   MOV   R3, ASTEROID_0
   CALL  move_objeto
@@ -1223,7 +1224,7 @@ move_asteroide:
   MOV   R3, ASTEROID_3
   CALL  move_objeto
 
-sair_move_asteroide:
+sair_move_asteróide:
   POP   R3
   RFE
 
