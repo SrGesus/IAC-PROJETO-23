@@ -885,7 +885,7 @@ sair_desenha_asteroides:
 
 ; Se houver uma colisão Asteróide-painel acabar jogo
 termina_colisao:
-  MOV   R0, SOM_NAVE_EXPLOSAO
+  MOV   R0, SOM_GAMEOVER_COLISAO
   MOV   R1, FUNDO_GAMEOVER_COLISAO
   MOV   R2, MAPA_ROTINAS_TERMINADO
   MOV   R3, 0
