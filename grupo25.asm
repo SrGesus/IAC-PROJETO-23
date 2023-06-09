@@ -91,7 +91,7 @@ SP_inicial:
 SP_teclado:
 
   STACK 100H  ; Stack do processo de executar comandos
-SP_control:
+SP_gera_asteroides:
 
   STACK 100H  ; Stack do processo que desenha o ecrã
 SP_gráficos:
@@ -383,248 +383,15 @@ inicio:
   EI
 
   CALL teclado
-  CALL control
+  CALL gera_asteroides_setup
   CALL display
 
 ; *****************************************************************************
 ; * "PROCESSO"
-; * MAIN - O processo principal trata da geração de asteróides
+; * MAIN - O processo principal trata da gestão do estado de jogo e 
+; *   da execução de comandos.
 ; *****************************************************************************
-main_setup:
-  MOV   R1, 5 ; Tamanho de tabela LISTA_ASTEROIDES_POSSIVEIS
-  MOV   R2, 4 ; Tamanho de tabela LISTA_ASTEROIDES_BONECOS
-  MOV   R4, LISTA_ASTEROIDES_POSSIVEIS
-  MOV   R5, LISTA_ASTEROIDES_BONECOS
-  MOV   R6, TEC_LIN ; Leitura teclado para gerar nºs aleatórios
 main:
-  ; só verificar uma colisão a cada duas atualizações de ecrã
-  ; para diminui sobreposições
-  MOV   R3, [atualiza_ecrã]
-  MOV   R3, [atualiza_ecrã]
-  MOV   R3, [atualiza_ecrã]
-  MOV   R3, [atualiza_ecrã]
-
-  MOV   R10, LISTA_ASTEROIDES
-ciclo_gera_asteroides:
-  MOV   R3, [R10]  ; Objeto asteróide
-  CMP   R3, NULL
-  JZ    main
-
-  CALL  gera_asteroide
-  JZ    main
-
-  ADD   R10, 2  ; Cada elemento é uma Word (2 bytes)
-  JMP ciclo_gera_asteroides
-
-; *****************************************************************************
-; * GERA_ASTEROIDE - Gera um asteróide com um posição e direção aleatória
-; * Argumentos:
-; *   R1: Tamanho de tabela LISTA_ASTEROIDES_POSSIVEIS
-; *   R2: Tamanho de tabela LISTA_ASTEROIDES_BONECOS
-; *   R3: Objeto Asteróide (Valor é consumido)
-; *   R4: Tabela LISTA_ASTEROIDES_POSSIVEIS
-; *   R5: Tabela LISTA_ASTEROIDES_BONECOS
-; *   R6: Endereço Leitura Teclado.
-; *   R0, R7: Valor é consumido
-; * Retorno:
-; *   R0: é 0 se asteróide foi gerado
-; *   Flags: Resultado de CMP R0, 0
-; *****************************************************************************
-gera_asteroide:
-  MOV   R0, [R3-2]  ; Valor de ativação
-  CMP   R0, 0
-  JNZ   sair_gera_asteroide ; Se não for 0 não gerar
-
-  ; Gera posição e direção aleatória
-  CALL numero_aleatório
-  MOD   R0, R1    ; i = random() % length_lista_asteroides_possíveis
-  SHL   R0, 3     ; Cada elemento tem 4 Words (8 Bytes)
-  ADD   R0, R4    ; R0 = &lista_asteróides_possíveis[i]
-
-  ; Escreve Posição inicial e direção no Asteróide R3
-  MOV   R7,   [R0]  ; linha inicial
-  MOV   [R3],  R7   ; R3 Endereço Linha
-  MOV   R7,   [R0+2]    ; coluna inicial
-  MOV   [R3+2], R7  ; R3+2 Endereço Coluna
-  MOV   R7,   [R0+4]    ; direção linha
-  MOV   [R3+4], R7  ; R3+4 Endereço Direção Linha
-  MOV   R7,   [R0+6]    ; direção coluna
-  MOV   [R3+6], R7  ; R3+6 Endereço Direção Coluna
-
-  ; Gera tipo aleatório (minerável ou não)
-  CALL numero_aleatório
-  MOD   R0,   R2    ; i = random() % length_lista_asteroides_bonecos
-  SHL   R0,   1     ; Cada elemento tem 1 Words (2 Bytes)
-  ADD   R0,   R5    ; R0 = &lista_asteróides_possíveis[i]
-
-  ; Escreve boneco asteróide
-  MOV   R7,   [R0]  
-  MOV   [R3+8], R7  ; R3+8 Endereço Boneco
-
-  ; Ativa asteróide
-  MOV   R0, 1
-  MOV   [R3-2], R0  ; Estado de ativação = 1, ativa asteróide
-
-  ; Valor de Retorno (0 se Asteróide foi gerado)
-  MOV   R0, 0
-sair_gera_asteroide:
-  CMP   R0, 0
-  RET
-
-; *****************************************************************************
-; * NUMERO_ALEATÓRIO - Gera um número aleatório de 0 a 15.
-; * Argumentos:
-; *   R6: Endereço Leitura Teclado.
-; * Retorno:
-; *   R0: Valor aleatório de 0 a 15
-; *****************************************************************************
-numero_aleatório:
-  MOVB  R0, [R6]  ; Lê input teclado
-  SHR   R0, 4     ; Deita o valor da coluna fora
-  RET
-
-; *****************************************************************************
-; * PROCESSO
-; * TECLADO - Processo varre o teclado em ciclo para a variável tecla_premida
-; *   e faz yield em cada ciclo, (WAIT no espera_tecla)
-; *****************************************************************************
-PROCESS SP_teclado
-teclado:
-  MOV   R0, 0         ; Registo da coluna/tecla premida
-  MOV   R1, TEC_PRIM_LIN   ; Linha toma valor inicial 1111H
-  MOV   R2, TEC_LIN   ; endereço do periférico das  linhas do teclado
-  MOV   R3, TEC_COL   ; endereço do periférico das colunas do teclado
-  MOV   R4, MASCARA   ; para isolar os 4 bits de menor peso, ao ler as colunas do teclado
-  MOV   R5, SOM_BOTAO ; Som clicar botão
-
-espera_tecla: ; Ciclo enquanto a tecla NÃO estiver a ser premida
-  WAIT        ; Adormece quando os outros processos estão bloqueados e não há teclas/interrupções ativas
-  ROL   R1,   1       ; Roda o valor da linha (representado pelo least significant nibble)
-  MOVB  [R2], R1      ; Escreve no periférico das linhas do teclado
-  MOVB  R0,   [R3]    ; lê para R0 a coluna
-  AND   R0,   R4      ; descarta todos bits exceto 0-3
-  CMP   R0,   0       ; nenhuma tecla premida é coluna = 0
-  JZ    espera_tecla  ; se nenhuma tecla for premida continuar ciclo
-
-  MOV   [TOCA_SOM], R5
-  CALL  valor_teclado  ; R0 <- Valor da tecla
-  MOV   [tecla_premida], R0 ; Escreve na var LOCK tecla_premida
-
-ha_tecla: ; Ciclo enquanto a tecla estiver a ser premida
-  YIELD   ; Há uma tecla premida então nunca vai adormecer (logo não usar WAIT)
-  MOVB  [R2], R1      ; Escreve no periférico das linhas do teclado
-  MOVB  R0,   [R3]    ; lê para R0 a coluna
-  AND   R0,   R4      ; descarta todos bits exceto 0-3
-  CMP   R0,   0       ; nenhuma tecla premida é coluna = 0
-  JNZ   ha_tecla      ; se tecla ainda estiver premida continuar ciclo
-  JMP   espera_tecla  ; se não, voltar a ler todas as linhas
-
-; *****************************************************************************
-; * VALOR_TECLADO - Rotina para converter linha e coluna para valor 
-; *   0H até FH sem loops
-; * Argumentos:
-; *   R0: Valor da coluna (Valor é consumido)
-; *   R1: Valor da linha
-; *   R4: Máscara 000FH
-; *   R6: Valor é consumido
-; * Retorno:
-; *   R0: Valor da tecla premida (0H a FH)
-; *****************************************************************************
-valor_teclado:
-  PUSH  R1      ; guarda o valor do R1
-
-  AND   R1, R4  ; descarta todos bits exceto 0-3
-
-  ; Converter o nibble linha 1-2-4-8 para 0-1-2-3
-  SHR   R1, 1
-  MOV   R6, R1
-  SHR   R6, 2
-  SUB   R1, R6
-  ; mesmo processo para coluna
-  SHR   R0, 1
-  MOV   R6, R0
-  SHR   R6, 2
-  SUB   R0, R6
-
-  SHL   R1, 2   ; Multiplica linha por 4
-  ADD   R0, R1  ; 4*linha + coluna = valor
-
-  POP   R1      ; R1 volta a tomar valor anterior
-  RET
-
-; *****************************************************************************
-; * PROCESSO
-; * DISPLAY - Processo que atualiza display e a energia da nave
-; *****************************************************************************
-PROCESS SP_display
-display:
-  MOV   R0, 10  ; Escreve em base 10
-display_ciclo:
-  MOV   R6, [valor_display] ; LOCK bloqueia até valor ser atualizado
-  CALL  escreve_display
-
-  ; Se energia <= 0 salta para nave_sem_energia
-  CMP   R6, 0
-  JLE   nave_sem_energia  
-
-  JMP   display_ciclo
-
-; Se energia <= 0
-nave_sem_energia:
-  MOV R6, 0
-  MOV R1, FUNDO_GAMEOVER_ENERGIA
-  MOV R2, SOM_GAMEOVER_ENERGIA
-  MOV R3, MAPA_ROTINAS_TERMINADO
-
-  MOV [estado_jogo],  R6  ; Pausa jogo
-  MOV [DISPLAYS],     R6  ; Quando é <= 0 escreve 0
-  MOV [APAGA_ECRÃS],  R6  ; apaga todos os pixels já desenhados (o valor de R6 não é relevante)
-
-  ; Efeito gameover_energia
-  MOV [SEL_CEN_FUNDO], R1
-  MOV [TOCA_SOM], R2
-
-  ; Desativa outros controles do teclado
-  MOV [MAPA_ROTINAS], R3
-
-  JMP display_ciclo
-
-; *****************************************************************************
-; * ESCREVE_DISPLAY - Transforma valor Hex noutra base (de 1 a 16), num limite 
-; *   de 3 dígitos para base 10 é válido de 0 a 999 (0H a 3E7H) 
-; *   e representa-o no display.
-; * Argumentos:
-; *   R0: Base (Denominador das divisões)
-; *   R1, R2, R3: Valor é consumido
-; *   R6: Valor do display
-; *****************************************************************************
-escreve_display:
-; converte o número no display num número decimal
-  MOV   R1,   R6
-  MOV   R3,   R6
-
-  MOD   R1,   R0  ; unidades em base 10 no nibble low
-  DIV   R3,   R0  ; Remove unidades
-
-  MOV   R2,   R3  ; R2 <- Valor sem unidades
-  MOD   R2,   R0  ; dezenas em base 10 no nibble low
-  DIV   R3,   R0  ; Remove dezenas
-  
-  SHL   R3,   4   ; R3 0000
-  OR    R3,   R2  ; R3 R2 
-  SHL   R3,   4   ; R3 R2 0000
-  OR    R3,   R1  ; R3 R2 R1
-
-  MOV   [DISPLAYS], R3  ; escreve valor decimal no display
-
-  RET
-
-; *****************************************************************************
-; * PROCESSO
-; * CONTROL - Processo que executa o commando correspondente a cada tecla
-; *****************************************************************************
-PROCESS SP_control
-control:
   MOV   R0, [tecla_premida] ; lê LOCK (bloqueia), espera por tecla 
   MOV   R1, [MAPA_ROTINAS] ; Seleciona a lista de rotinas adequada
 
@@ -633,7 +400,7 @@ control:
   MOV   R0, [R1]
   CALL  R0       ; call lista_rotinas[valor]
 
-  JMP   control
+  JMP   main
 
 ; *****************************************************************************
 ; * TERMINA_TECLA - Termina o jogo por ordem do utilizador
@@ -785,6 +552,242 @@ atira_sonda:
   MOV   [R3-2], R0  ; Ativa a sonda (verifica-se R0 != 0)
   
 sair_atira_sonda:
+  RET
+
+
+; *****************************************************************************
+; * PROCESSO
+; * TECLADO - Processo varre o teclado em ciclo para a variável tecla_premida
+; *   e faz yield em cada ciclo, (WAIT no espera_tecla)
+; *****************************************************************************
+PROCESS SP_teclado
+teclado:
+  MOV   R0, 0         ; Registo da coluna/tecla premida
+  MOV   R1, TEC_PRIM_LIN   ; Linha toma valor inicial 1111H
+  MOV   R2, TEC_LIN   ; endereço do periférico das  linhas do teclado
+  MOV   R3, TEC_COL   ; endereço do periférico das colunas do teclado
+  MOV   R4, MASCARA   ; para isolar os 4 bits de menor peso, ao ler as colunas do teclado
+  MOV   R5, SOM_BOTAO ; Som clicar botão
+
+espera_tecla: ; Ciclo enquanto a tecla NÃO estiver a ser premida
+  WAIT        ; Adormece quando os outros processos estão bloqueados e não há teclas/interrupções ativas
+  ROL   R1,   1       ; Roda o valor da linha (representado pelo least significant nibble)
+  MOVB  [R2], R1      ; Escreve no periférico das linhas do teclado
+  MOVB  R0,   [R3]    ; lê para R0 a coluna
+  AND   R0,   R4      ; descarta todos bits exceto 0-3
+  CMP   R0,   0       ; nenhuma tecla premida é coluna = 0
+  JZ    espera_tecla  ; se nenhuma tecla for premida continuar ciclo
+
+  MOV   [TOCA_SOM], R5
+  CALL  valor_teclado  ; R0 <- Valor da tecla
+  MOV   [tecla_premida], R0 ; Escreve na var LOCK tecla_premida
+
+ha_tecla: ; Ciclo enquanto a tecla estiver a ser premida
+  YIELD   ; Há uma tecla premida então nunca vai adormecer (logo não usar WAIT)
+  MOVB  [R2], R1      ; Escreve no periférico das linhas do teclado
+  MOVB  R0,   [R3]    ; lê para R0 a coluna
+  AND   R0,   R4      ; descarta todos bits exceto 0-3
+  CMP   R0,   0       ; nenhuma tecla premida é coluna = 0
+  JNZ   ha_tecla      ; se tecla ainda estiver premida continuar ciclo
+  JMP   espera_tecla  ; se não, voltar a ler todas as linhas
+
+; *****************************************************************************
+; * VALOR_TECLADO - Rotina para converter linha e coluna para valor 
+; *   0H até FH sem loops
+; * Argumentos:
+; *   R0: Valor da coluna (Valor é consumido)
+; *   R1: Valor da linha
+; *   R4: Máscara 000FH
+; *   R6: Valor é consumido
+; * Retorno:
+; *   R0: Valor da tecla premida (0H a FH)
+; *****************************************************************************
+valor_teclado:
+  PUSH  R1      ; guarda o valor do R1
+
+  AND   R1, R4  ; descarta todos bits exceto 0-3
+
+  ; Converter o nibble linha 1-2-4-8 para 0-1-2-3
+  SHR   R1, 1
+  MOV   R6, R1
+  SHR   R6, 2
+  SUB   R1, R6
+  ; mesmo processo para coluna
+  SHR   R0, 1
+  MOV   R6, R0
+  SHR   R6, 2
+  SUB   R0, R6
+
+  SHL   R1, 2   ; Multiplica linha por 4
+  ADD   R0, R1  ; 4*linha + coluna = valor
+
+  POP   R1      ; R1 volta a tomar valor anterior
+  RET
+
+; *****************************************************************************
+; * PROCESSO
+; * DISPLAY - Processo que atualiza display e a energia da nave
+; *****************************************************************************
+PROCESS SP_display
+display:
+  MOV   R0, 10  ; Escreve em base 10
+display_ciclo:
+  MOV   R6, [valor_display] ; LOCK bloqueia até valor ser atualizado
+  CALL  escreve_display
+
+  ; Se energia <= 0 salta para nave_sem_energia
+  CMP   R6, 0
+  JLE   nave_sem_energia  
+
+  JMP   display_ciclo
+
+; Se energia <= 0
+nave_sem_energia:
+  MOV R6, 0
+  MOV R1, FUNDO_GAMEOVER_ENERGIA
+  MOV R2, SOM_GAMEOVER_ENERGIA
+  MOV R3, MAPA_ROTINAS_TERMINADO
+
+  MOV [estado_jogo],  R6  ; Pausa jogo
+  MOV [DISPLAYS],     R6  ; Quando é <= 0 escreve 0
+  MOV [APAGA_ECRÃS],  R6  ; apaga todos os pixels já desenhados (o valor de R6 não é relevante)
+
+  ; Efeito gameover_energia
+  MOV [SEL_CEN_FUNDO], R1
+  MOV [TOCA_SOM], R2
+
+  ; Desativa outros controles do teclado
+  MOV [MAPA_ROTINAS], R3
+
+  JMP display_ciclo
+
+; *****************************************************************************
+; * ESCREVE_DISPLAY - Transforma valor Hex noutra base (de 1 a 16), num limite 
+; *   de 3 dígitos para base 10 é válido de 0 a 999 (0H a 3E7H) 
+; *   e representa-o no display.
+; * Argumentos:
+; *   R0: Base (Denominador das divisões)
+; *   R1, R2, R3: Valor é consumido
+; *   R6: Valor do display
+; *****************************************************************************
+escreve_display:
+; converte o número no display num número decimal
+  MOV   R1,   R6
+  MOV   R3,   R6
+
+  MOD   R1,   R0  ; unidades em base 10 no nibble low
+  DIV   R3,   R0  ; Remove unidades
+
+  MOV   R2,   R3  ; R2 <- Valor sem unidades
+  MOD   R2,   R0  ; dezenas em base 10 no nibble low
+  DIV   R3,   R0  ; Remove dezenas
+  
+  SHL   R3,   4   ; R3 0000
+  OR    R3,   R2  ; R3 R2 
+  SHL   R3,   4   ; R3 R2 0000
+  OR    R3,   R1  ; R3 R2 R1
+
+  MOV   [DISPLAYS], R3  ; escreve valor decimal no display
+
+  RET
+
+; *****************************************************************************
+; * PROCESSO
+; * GERA_ASTERÓIDES - Processo que executa o commando correspondente a cada tecla
+; *****************************************************************************
+PROCESS SP_gera_asteroides
+gera_asteroides_setup:
+  MOV   R1, 5 ; Tamanho de tabela LISTA_ASTEROIDES_POSSIVEIS
+  MOV   R2, 4 ; Tamanho de tabela LISTA_ASTEROIDES_BONECOS
+  MOV   R4, LISTA_ASTEROIDES_POSSIVEIS
+  MOV   R5, LISTA_ASTEROIDES_BONECOS
+  MOV   R6, TEC_LIN ; Leitura teclado para gerar nºs aleatórios
+
+ciclo_gera_asteroides:
+  ; só verificar uma colisão a cada duas atualizações de ecrã
+  ; para diminui sobreposições
+  MOV   R3, [atualiza_ecrã]
+  MOV   R3, [atualiza_ecrã]
+  MOV   R3, [atualiza_ecrã]
+  MOV   R3, [atualiza_ecrã]
+
+  MOV   R10, LISTA_ASTEROIDES
+ciclo_lista_asteroides:
+  MOV   R3, [R10]  ; Objeto asteróide
+  CMP   R3, NULL
+  JZ    ciclo_gera_asteroides
+
+  CALL  gera_asteroide
+  JZ    ciclo_gera_asteroides ; Apenas um asteróide por iteração
+
+  ADD   R10, 2  ; Cada elemento é uma Word (2 bytes)
+  JMP ciclo_lista_asteroides
+
+; *****************************************************************************
+; * GERA_ASTEROIDE - Gera um asteróide com um posição e direção aleatória
+; * Argumentos:
+; *   R1: Tamanho de tabela LISTA_ASTEROIDES_POSSIVEIS
+; *   R2: Tamanho de tabela LISTA_ASTEROIDES_BONECOS
+; *   R3: Objeto Asteróide (Valor é consumido)
+; *   R4: Tabela LISTA_ASTEROIDES_POSSIVEIS
+; *   R5: Tabela LISTA_ASTEROIDES_BONECOS
+; *   R6: Endereço Leitura Teclado.
+; *   R0, R7: Valor é consumido
+; * Retorno:
+; *   R0: é 0 se asteróide foi gerado
+; *   Flags: Resultado de CMP R0, 0
+; *****************************************************************************
+gera_asteroide:
+  MOV   R0, [R3-2]  ; Valor de ativação
+  CMP   R0, 0
+  JNZ   sair_gera_asteroide ; Se não for 0 não gerar
+
+  ; Gera posição e direção aleatória
+  CALL numero_aleatório
+  MOD   R0, R1    ; i = random() % length_lista_asteroides_possíveis
+  SHL   R0, 3     ; Cada elemento tem 4 Words (8 Bytes)
+  ADD   R0, R4    ; R0 = &lista_asteróides_possíveis[i]
+
+  ; Escreve Posição inicial e direção no Asteróide R3
+  MOV   R7,   [R0]  ; linha inicial
+  MOV   [R3],  R7   ; R3 Endereço Linha
+  MOV   R7,   [R0+2]    ; coluna inicial
+  MOV   [R3+2], R7  ; R3+2 Endereço Coluna
+  MOV   R7,   [R0+4]    ; direção linha
+  MOV   [R3+4], R7  ; R3+4 Endereço Direção Linha
+  MOV   R7,   [R0+6]    ; direção coluna
+  MOV   [R3+6], R7  ; R3+6 Endereço Direção Coluna
+
+  ; Gera tipo aleatório (minerável ou não)
+  CALL numero_aleatório
+  MOD   R0,   R2    ; i = random() % length_lista_asteroides_bonecos
+  SHL   R0,   1     ; Cada elemento tem 1 Words (2 Bytes)
+  ADD   R0,   R5    ; R0 = &lista_asteróides_possíveis[i]
+
+  ; Escreve boneco asteróide
+  MOV   R7,   [R0]  
+  MOV   [R3+8], R7  ; R3+8 Endereço Boneco
+
+  ; Ativa asteróide
+  MOV   R0, 1
+  MOV   [R3-2], R0  ; Estado de ativação = 1, ativa asteróide
+
+  ; Valor de Retorno (0 se Asteróide foi gerado)
+  MOV   R0, 0
+sair_gera_asteroide:
+  CMP   R0, 0
+  RET
+
+; *****************************************************************************
+; * NUMERO_ALEATÓRIO - Gera um número aleatório de 0 a 15.
+; * Argumentos:
+; *   R6: Endereço Leitura Teclado.
+; * Retorno:
+; *   R0: Valor aleatório de 0 a 15
+; *****************************************************************************
+numero_aleatório:
+  MOVB  R0, [R6]  ; Lê input teclado
+  SHR   R0, 4     ; Deita o valor da coluna fora
   RET
 
 ; *****************************************************************************
