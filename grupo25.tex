@@ -111,8 +111,130 @@
 % Content
 % ------------------------------------------------------------------------------
 
-\section{Detalhes}
-Esta secção inclui detalhes sobre a abordagem tomada na implementação de algumas funcionalidades, cujo funcionamento não é óbvio e foi .
+
+\section{Manual de Utilizador}
+O mapeamento das teclas é o seguinte:
+
+\begin{center}
+    \textbf {
+    \begin{minipage}{3cm}
+        \begin{center}
+            Tecla 0: \\
+            Tecla 1: \\
+            Tecla 2: \\
+            Tecla C: \\
+            Tecla D: \\
+            Tecla E:
+        \end{center}
+    \end{minipage}
+    }
+    \begin{minipage}{5cm}
+        \begin{flushleft}    
+            Atira Sonda Esquerda \\
+            Atira Sonda Meio \\
+            Atira Sonda Direita \\
+            Começa/Renicia o jogo \\
+            Pausa/Resume o jogo \\
+            Termina o jogo
+        \end{flushleft}
+    \end{minipage}
+\end{center}
+
+\bigbreak
+
+\section{Arquitetura}
+
+\subsection{Processos}
+O projeto recorre ao uso de processos cooperativos, são um total de cinco a contar com o principal, que desempenham as suas designadas tarefas.
+
+\bigbreak
+
+\subsubsection{MAIN}
+\label{sec:MAIN}
+
+Este processo é reponsável por executar os comandos associados a cada tecla. Foi feito um mapa de rotinas para cada estado do jogo de modo a evitar ações indesejadas (\emph{E.g.:} ativação de uma sonda no estado \emph{pausado}). O mapa em efeito está escrito na variável \texttt{MAPA\_ROTINAS}, e pode ser uma das três seguintes, representando o estado do jogo:
+
+\bigbreak
+
+\begin{itemize}
+    \item \texttt{MAPA\_ROTINAS\_TERMINADO:} Durante o ínicio ou depois do fim de um jogo
+    \item \texttt{MAPA\_ROTINAS\_JOGO:} Durante o jogo
+    \item \texttt{MAPA\_ROTINAS\_PAUSA:} Durante pausa
+\end{itemize}
+
+
+\bigbreak
+
+Depois a partir do valor da tecla em questão, é possível chamar uma rotina com uma complexidade de tempo constante $\theta(1)$, e de espaço linear $\theta(n)$ ao ir buscar o endereço da rotina a uma tabela de rotinas usando o valor da tecla como índice, da seguinte forma:
+
+\bigbreak
+
+\begin{code}{Escolha da rotina}{}
+    \begin{minted}{gas}
+    SHL   R0, 1    ; WORD são 2 bytes (Multiplica incremento por 2)
+    ADD   R1, R0   ; salta para o comando correspondente
+    MOV   R0, [R1] ; R0 = endereço da rotina a executar
+    CALL  R0       ; call lista_rotinas[valor]
+    \end{minted}
+\end{code}
+
+\newpage
+
+\subsubsection{TECLADO}
+O processo \texttt{teclado} trata do varrimento das teclas linha a linha, escrevendo para a variável LOCK \texttt{tecla\_premida}, que resulta no desbloqueio do \hyperref[sec:MAIN]{\underline{processo \texttt{MAIN}}} para qual é deferido o que fazer com a tecla premida.
+
+\bigbreak
+
+No ciclo \texttt{espera\_tecla} para evitar o uso de mais uma condição, em vez de ser usado um \texttt{SHL} ou \texttt{SHR} e o R1 ter de ser reposto a cada 4 ciclos de volta ao estado inicial, é usado um \texttt{ROL} e o valor inicial de \texttt{R1} é 1111H, rodando entre 1111H-2222H-4444H-8888H-1111H de forma a não precisar de nenhuma condição. De facto, isto vai tornar com que o PEPE-16 escreva para o periférico das linhas do teclado os bytes 11H em vez de 01H, 22H em vez de 02H, etcetera, mas o chip Teclado apenas tem uma entrada de 4 bits de largura, logo apenas o nibble low é relevante.
+
+\bigbreak
+
+\begin{code}{Ciclo espera\_tecla}{}
+    \begin{minted}{gas}
+espera_tecla: ; Ciclo enquanto a tecla NÃO estiver a ser premida
+  ...
+  ROL   R1,   1  ; Roda o valor da linha
+  MOVB  [R2], R1 ; Escreve no periférico das linhas do teclado
+  ...
+    \end{minted}
+\end{code}
+
+\bigbreak
+
+\subsubsection{DISPLAY}
+O processo \texttt{display} lê a variável LOCK \texttt{valor\_display}, e quando esta é atualizada converte o valor de hexadecimal para decimal e representa-o no display.
+
+\bigbreak
+
+\subsubsection{GERA\_ASTERÓIDES}
+Para evitar a sobreposição de asteróides, o processo \texttt{gera\_asteróides} bloqueia a ler a variável LOCK \texttt{atualiza\_ecrã} várias vezes de forma a apenas gerar um asteróide a cada poucas atualizações de ecrã.
+
+\bigbreak
+
+Para a geração do asteróide é lido um número aleatório do periférico de leitura do teclado como descrito no guião e depois  usando MOD é selecionado um elemento de uma lista que guarda as posições e incremento direções possíveis, e de outra lista se for minerável ou não (lista com 4 elementos, 1 dele sendo o minerável).
+
+\newpage
+
+\subsubsection{GRÁFICOS}
+
+As interrupções estão desativadas para prevenir artefactos e movimento de objetos durante verificação de colisões. O processo está dividido em 4 partes:
+\begin{itemize}
+    \item \texttt{gráficos\_painel:} Desenha o painel da nave, é executado só ao ínicio do jogo 
+    \item \texttt{gráficos\_luzes:} Desenha as luzes no painel a cada 200ms
+    \item \texttt{gráficos\_asteroides:} Desenha os asteroides ativos, verifica se estão dentro dos limites do ecrã e trata das colisões asteróide-sonda e asteróide-nave.
+    \item \texttt{gráficos\_sondas:} Desenha as sondas as ativas, e verifica se estão dentro dos limites do ecrã.
+\end{itemize}
+
+\subsection{Interrupções}
+
+Foi optado que as interrupções fazem determinadas ações diretamente, invés de apenas acionar uma variável LOCK, para evitar fazer mais quatro processos, uma vez que isso significaria uma desnecessária alocação de memória com mais 4 STACKs, e uma dupla verificação de se as interrupções já foram ativas, visto que o processador já faz isso. Isto também traz mais prioridade às interrupções e possivelmente evita interrupções serem ativas duas vezes e o programa apenas reagir a uma dessas ativações.
+
+\bigbreak
+
+Para as funcionalidades de pausa e terminar o jogo, todas as rotinas de interrupção antes de executar as suas ações verificam se a variável \texttt{estado\_jogo} é == 0, e sendo retornam imediatamente, de forna a não executar as suas funcionalidades normais.
+
+\section{Comentários}
+Esta secção inclui detalhes sobre a abordagem tomada na implementação de algumas funcionalidades, cujo funcionamento ou não é óbvio e pode ter tomado uma direção diferente do que sugerido nos guiões de laboratório, ou que suscitam algum interesse por outra razão.
 
 \subsection{Rotina valor\_teclado}
 No processo de obtenção do valor da tecla premida a partir dos valores de linha e de coluna, é preciso converter primeiro estes valores de 1-2-4-8 para o seu bit ativo: 0-1-2-3.
@@ -152,12 +274,15 @@ Olhemos então para a transformação que se efetua:
 \end{center}
 
 \bigbreak
-Isto trata-se obviamente da operação \( Ret = log_{2} (X) \) (porque X é potência de 2) ou o número de \textit{trailing zeroes}, e é possível implementar essa operação para fazer a conversão, como indicado no guião do lab3, tendo um loop em que é incrementado um registo e feito SHR até sair um 1 pelo Carry. 
+
+Isto trata-se obviamente da operação $Ret = log_{2} (X)$ (porque X é potência de 2) ou o número de \textit{trailing zeroes}, e é possível implementar essa operação para fazer a conversão, como indicado no guião do lab3, tendo um loop em que é incrementado um registo e feito SHR até sair um 1 pelo Carry. 
 
 \bigbreak
+
 Mas olhando mais perto, como são apenas estes valores, é possível fazer algo mais eficiente que não recorra ao uso de loops. Reparemos que de 1,2,4 para 0,1,2 apenas ocorre um SHR, mas um SHR de 8 é 4 e queremos 3. O que é possível fazer para apenas subtrair 1 quando acabamos com 4 é reparar que fazendo um SHR, 2 de 0,1,2,4 obtemos 0,0,0,1. Então o resultado do primeiro SHR seguido da subtração desse mesmo resultado após SHR, 2 é igual ao que a conversão quer devolver.
 
 \bigbreak
+
 O processo pode então ser descrito da seguinte forma:
 \begin{center}
     \begin{minipage}{1.5cm}
@@ -201,7 +326,7 @@ O processo pode então ser descrito da seguinte forma:
     \begin{minipage}{1.5cm}
         \begin{center}
             Z \\
-            SHR Y, 1 \\
+            SHR Y, 2 \\
             0000b 0 \\
             0000b 0 \\
             0000b 0 \\
@@ -237,10 +362,10 @@ Na linguagem de Assembly P4, sendo RX um registo onde least significant nibble �
 
 \begin{code}{Conversão 1,2,4,8 para 0,1,2,3}{}
     \begin{minted}{gas}
-        SHR RX, 1   ; RX = Y
-        MOV R2, RX  ; R2 = Y
-        SHR R2, 2   ; R2 = Z
-        SUB RX, R2  ; RX = Y-Z
+    SHR RX, 1   ; RX = Y
+    MOV R2, RX  ; R2 = Y
+    SHR R2, 2   ; R2 = Z
+    SUB RX, R2  ; RX = Y-Z
     \end{minted}
 \end{code}
 

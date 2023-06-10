@@ -43,19 +43,19 @@
   TEC_COL                 EQU 0E000H    ; endereço do periférico do POUT-2 (colunas teclado)
   
   ; Endereços Media Center
-  COMANDOS				        EQU	6000H	  ; endereço de base dos comandos do MediaCenter
-  APAGA_ECRÃ	 		        EQU COMANDOS + 00H	; endereço do comando para apagar um dado ecrã
-  APAGA_ECRÃS	 		        EQU COMANDOS + 02H	; endereço do comando para apagar todos os pixels já desenhados
+  COMANDOS				        EQU	6000H	          ; endereço de base dos comandos do MediaCenter
+  APAGA_ECRÃ	 		        EQU COMANDOS + 00H  ; endereço do comando para apagar um dado ecrã
+  APAGA_ECRÃS	 		        EQU COMANDOS + 02H  ; endereço do comando para apagar todos os pixels já desenhados
   SEL_ECRÃ                EQU COMANDOS + 04H  ; endereço do comando para selecionar ecrã
   MOSTRA_ECRÃ             EQU COMANDOS + 06H  ; endereço do comando para mostrar ecrã
-  DEFINE_LINHA            EQU COMANDOS + 0AH	; endereço do comando para definir a linha
-  DEFINE_COLUNA           EQU COMANDOS + 0CH	; endereço do comando para definir a coluna
-  DEFINE_PIXEL            EQU COMANDOS + 12H	; endereço do comando para escrever um pixel
-  APAGA_AVISO             EQU COMANDOS + 40H	; endereço do comando para apagar o aviso de nenhum cenário selecionado
-  SEL_CEN_FUNDO           EQU COMANDOS + 42H	; endereço do comando para selecionar uma imagem de fundo
+  DEFINE_LINHA            EQU COMANDOS + 0AH  ; endereço do comando para definir a linha
+  DEFINE_COLUNA           EQU COMANDOS + 0CH  ; endereço do comando para definir a coluna
+  DEFINE_PIXEL            EQU COMANDOS + 12H  ; endereço do comando para escrever um pixel
+  APAGA_AVISO             EQU COMANDOS + 40H  ; endereço do comando para apagar o aviso de nenhum cenário selecionado
+  SEL_CEN_FUNDO           EQU COMANDOS + 42H  ; endereço do comando para selecionar uma imagem de fundo
   APAGA_FRONTAL           EQU COMANDOS + 44H  ; endereço do comando para apagar imagem frontal
   SEL_CEN_FRONTAL         EQU COMANDOS + 46H  ; endereço do comando para selecionar uma imagem frontal
-  TOCA_SOM				        EQU COMANDOS + 5AH	; endereço do comando para tocar um som
+  TOCA_SOM				        EQU COMANDOS + 5AH  ; endereço do comando para tocar um som
 
   ; Painel Nave
   LINHA_PAINEL            EQU 27  ; linha onde se encontra o painel
@@ -383,8 +383,8 @@ inicio:
   EI
 
   CALL teclado
-  CALL gera_asteróides_setup
   CALL display
+  CALL gera_asteróides_setup
 
 ; *****************************************************************************
 ; * "PROCESSO"
@@ -1212,6 +1212,7 @@ move_asteróide:
   MOV   [atualiza_ecrã],  R3 ; Escreve para LOCK, desbloqueia processo gráfico
   MOV   [atualiza_asteróides], R3 ; Declara asteróides como desatualizados (0)
 
+  ; Usar a LISTA_ASTERÓIDES iria requerir mais linhas e mais registos
   MOV   R3, ASTEROID_0
   CALL  move_objeto
 
